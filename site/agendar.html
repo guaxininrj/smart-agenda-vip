@@ -1,0 +1,1251 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<script>if (location.hostname !== 'barberbook-smartlink.vercel.app') document.write('<base href="https://barberbook-smartlink.vercel.app/">');</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agendar — Smart Agenda VIP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #060607; --surface: #0E0E10; --surface-2: #141417;
+  --brass: #FFFFFF; --brass-soft: #D8D8DC;
+  --cream: #E8E8EA; --muted: #9A9AA0;
+  --verde: #25D366; --verde-cl: #7FE0A7;
+  --border: rgba(232, 232, 234, 0.08);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --font-display: 'Oswald', sans-serif;
+  --font-body: 'Work Sans', sans-serif;
+  --radius: 10px; --radius-sm: 6px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--cream); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, h4 { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin: 0; color: var(--cream); }
+h3 { font-size: 15px; color: var(--brass-soft); }
+button { font-family: var(--font-body); cursor: pointer; border: none; }
+input, select { font-family: var(--font-body); background: var(--surface-2); border: 1px solid var(--border); color: var(--cream); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px; outline: none; width: 100%; }
+a { color: var(--brass-soft); }
+
+header.topo { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); }
+header.topo img { height: 32px; }
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
+@media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.barber-stripe { height: 3px; width: 100%; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--brass), var(--cream), var(--brass), transparent); opacity: 0.85; margin: 16px 0; }
+
+.loja-header-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 4px; }
+.loja-header { display: flex; align-items: center; gap: 14px; }
+.loja-header .logo { width: 76px; height: 76px; border-radius: 14px; object-fit: cover; background: #fff; border: 1px solid var(--border); }
+.loja-header h1 { font-size: 25px; }
+.loja-avaliacao { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.loja-avaliacao .estrelas { color: #F5B942; letter-spacing: 1px; }
+.loja-header-botoes { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.barbeiro-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.barbeiro-topo { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.barbeiro-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); color: var(--brass-soft); font-size: 18px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; background: var(--surface-2); color: var(--cream); border: 1px solid var(--border); }
+.btn-primary { background: var(--brass); color: #000; border: none; }
+.btn-mp { display: inline-flex; align-items: center; gap: 6px; background: #00B1EA; color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-mp:hover { background: #009EE3; }
+.formas-pagamento { display: flex; gap: 14px; justify-content: space-around; margin-bottom: 16px; flex-wrap: wrap; }
+.forma-pagamento { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; font-size: 12px; color: var(--cream); font-family: var(--font-body); }
+.forma-pagamento:disabled { opacity: 0.5; cursor: default; }
+.forma-icone { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.btn-primary:hover { background: var(--brass-soft); }
+
+.servico-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: var(--radius-sm); background: var(--surface-2); margin-top: 8px; }
+.servico-item .nome { font-weight: 600; }
+.servico-item .dur { color: var(--muted); font-size: 12px; }
+.servico-item .preco { font-family: var(--font-mono); color: var(--brass-soft); font-weight: 600; }
+.servico-item.selecionado-item { border: 1px solid var(--brass); background: rgba(255,255,255,0.08); }
+.btn-add, .btn-remove { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; line-height: 1; flex-shrink: 0; }
+.btn-add { background: var(--brass); color: #000; }
+.btn-add:hover { background: var(--brass-soft); }
+.btn-remove { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+.btn-remove:hover { color: var(--brass-soft); border-color: var(--brass); }
+
+.info-linha { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.info-linha:last-child { border-bottom: none; }
+.info-linha .dia { color: var(--muted); width: 90px; flex-shrink: 0; }
+.info-linha.hoje .dia { color: var(--brass-soft); font-weight: 600; }
+
+.contato-icones { display: flex; gap: 14px; margin-top: 8px; }
+.contato-icones a { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--cream); font-size: 11px; text-decoration: none; }
+.contato-icones .bola { width: 40px; height: 40px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 18px; overflow: hidden; }
+.contato-icones .bola img { width: 100%; height: 100%; object-fit: cover; }
+
+.abas-cliente { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.aba-cliente { background: transparent; border: none; color: var(--muted); padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.aba-cliente.ativa { color: var(--cream); border-bottom-color: var(--brass); }
+.produto-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--surface-2); margin-top: 10px; gap: 10px; }
+.produto-item .nome { font-weight: 600; flex: 1; }
+.produto-item .preco { font-family: var(--font-mono); color: var(--brass-soft); font-weight: 600; }
+.produto-qtd { display: flex; align-items: center; gap: 8px; }
+.produto-qtd button { width: 26px; height: 26px; border-radius: 6px; background: var(--surface); color: var(--cream); border: 1px solid var(--border); font-size: 15px; line-height: 1; cursor: pointer; }
+.produto-qtd button:disabled { opacity: 0.4; cursor: default; }
+.produto-qtd span { font-family: var(--font-mono); min-width: 16px; text-align: center; }
+.carrinho-barra { position: sticky; bottom: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.plano-card-cliente { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-top: 12px; }
+.plano-card-cliente .topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.plano-badge { background: rgba(255,255,255,0.15); color: var(--brass-soft); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; margin-left: 8px; white-space: nowrap; }
+.plano-desc { color: var(--muted); font-size: 13px; margin-top: 6px; }
+.plano-inclusos { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.plano-inclusos span { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 3px 8px; border-radius: 6px; }
+.plano-rodape { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.plano-preco { font-family: var(--font-mono); color: var(--brass-soft); font-size: 20px; font-weight: 600; }
+.plano-preco span { font-size: 12px; color: var(--muted); }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+.modal-overlay.aberto { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto; box-shadow: var(--shadow); scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+.modal::-webkit-scrollbar { width: 6px; }
+.modal::-webkit-scrollbar-track { background: transparent; }
+.modal::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+.modal::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+.modal h2 { margin-bottom: 16px; font-size: 18px; }
+.passos { display: flex; align-items: center; gap: 6px; margin-bottom: 18px; }
+.passo-bola { width: 26px; height: 26px; border-radius: 50%; background: var(--surface-2); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.passo-bola.ativo { background: var(--brass); color: #000; }
+.passo-linha { flex: 1; height: 2px; background: var(--border); }
+
+.slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.slot-btn { padding: 8px 4px; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); color: var(--cream); font-family: var(--font-mono); font-size: 13px; cursor: pointer; }
+.slot-btn:hover { border-color: var(--brass); }
+.slot-btn.selecionado { background: var(--brass); color: #000; border-color: var(--brass); }
+
+.modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+.modal-actions .btn { flex: 1; justify-content: center; }
+label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block; }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <strong id="topo-nome" style="font-family:var(--font-display);text-transform:uppercase;letter-spacing:0.04em;">Smart Agenda VIP</strong>
+  </div>
+  <span style="color:var(--muted);font-size:12px;">agendamento online</span>
+</header>
+
+<div id="carregando" class="empty-state">Carregando...</div>
+
+<div class="wrap" id="conteudo" style="display:none;">
+  <div>
+    <div class="card">
+      <div class="loja-header-top">
+        <div class="loja-header">
+          <div id="loja-logo-wrap"></div>
+          <div>
+            <h1 id="loja-nome">—</h1>
+            <div class="loja-avaliacao"><span class="estrelas">★★★★★</span> · Barbearia</div>
+          </div>
+        </div>
+        <div class="loja-header-botoes">
+          <button class="btn btn-primary" onclick="mostrarAbaCliente('agendar')">📅 Agendar Agora</button>
+          <a class="btn" id="btn-ver-localizacao" href="#" target="_blank">📍 Ver Localização</a>
+        </div>
+      </div>
+      <p id="loja-sobre" style="color: var(--muted); font-size: 14px; margin-top: 10px;"></p>
+      <div class="barber-stripe"></div>
+
+      <div class="abas-cliente">
+        <button class="aba-cliente ativa" data-aba="agendar" onclick="mostrarAbaCliente('agendar')">📅 Agendar</button>
+        <button class="aba-cliente" data-aba="produtos" onclick="mostrarAbaCliente('produtos')">🛍️ Produtos</button>
+        <button class="aba-cliente" data-aba="planos" onclick="mostrarAbaCliente('planos')">🎟️ Planos</button>
+      </div>
+
+      <div id="aba-conteudo-agendar" class="aba-conteudo">
+        <h3 style="margin-bottom: 4px;">Profissionais</h3>
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 10px;">Selecione um profissional para escolher os serviços e agendar.</p>
+        <div id="lista-barbeiros"></div>
+      </div>
+      <div id="aba-conteudo-produtos" class="aba-conteudo" style="display:none;">
+        <div id="lista-produtos"></div>
+        <div id="carrinho-barra"></div>
+      </div>
+      <div id="aba-conteudo-planos" class="aba-conteudo" style="display:none;">
+        <div id="lista-planos"></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card" style="margin-bottom: 16px;">
+      <h3 style="margin-bottom: 10px;">Localização</h3>
+      <p id="loja-endereco" style="font-size: 14px; margin: 0 0 6px;">—</p>
+      <a id="loja-mapa" href="#" target="_blank" style="font-size: 13px;">Ver no mapa →</a>
+    </div>
+    <div class="card" style="margin-bottom: 16px;">
+      <h3 style="margin-bottom: 10px;">Horário de funcionamento</h3>
+      <div id="loja-horarios"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom: 10px;">Contato</h3>
+      <div class="contato-icones" id="loja-contatos"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal-box"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const DIAS_NOME = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+let LOJA = null;
+let SERVICOS = [];
+let BARBEIROS = [];
+let PLANOS = [];
+let PRODUTOS = [];
+let CARRINHO = {};
+let TELA_ATUAL = null;
+let RESERVA = { barbeiro: null, servicos: [], data: null, hora: null };
+let INTERVALO_STATUS_PAGAMENTO = null;
+
+function obterSlug() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('slug')) return params.get('slug');
+  const caminho = location.pathname.replace(/^\/+/, '').replace(/\.html$/, '');
+  if (caminho && !['agendar', 'index', 'login', ''].includes(caminho)) return caminho;
+  return null;
+}
+
+function fmtMoeda(v) {
+  return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+async function iniciar() {
+  const slug = obterSlug();
+  if (!slug) {
+    document.getElementById('carregando').textContent = 'Barbearia não encontrada.';
+    return;
+  }
+  const { data: perfil } = await sb.from('perfis')
+    .select('id, nome_barbearia, telefone, endereco, logo_url, criado_em, slug, horarios, whatsapp, instagram, facebook, sobre, configurado')
+    .eq('slug', slug).maybeSingle();
+  if (!perfil) {
+    document.getElementById('carregando').textContent = 'Barbearia não encontrada.';
+    return;
+  }
+  LOJA = perfil;
+  document.title = `Agendar — ${LOJA.nome_barbearia}`;
+  document.getElementById('topo-nome').textContent = LOJA.nome_barbearia;
+  document.getElementById('loja-nome').textContent = LOJA.nome_barbearia;
+  document.getElementById('loja-sobre').textContent = LOJA.sobre || '';
+  document.getElementById('loja-logo-wrap').innerHTML = LOJA.logo_url
+    ? `<img class="logo" src="${LOJA.logo_url}" alt="${LOJA.nome_barbearia}" />`
+    : `<div class="logo" style="display:flex;align-items:center;justify-content:center;font-family:var(--font-display);color:var(--brass-soft);font-size:28px;background:var(--surface-2);">${LOJA.nome_barbearia.slice(0,1)}</div>`;
+
+  document.getElementById('loja-endereco').textContent = LOJA.endereco || 'Endereço não informado';
+  const linkMapa = LOJA.endereco ? `https://www.google.com/maps?q=${encodeURIComponent(LOJA.endereco)}` : '#';
+  document.getElementById('loja-mapa').href = linkMapa;
+  document.getElementById('btn-ver-localizacao').href = linkMapa;
+
+  const horarios = LOJA.horarios || {};
+  const hojeDia = new Date().getDay().toString();
+  document.getElementById('loja-horarios').innerHTML = DIAS_NOME.map((nome, i) => {
+    const h = horarios[String(i)];
+    const texto = h && h.aberto ? `${h.inicio} - ${h.fim}` : 'Fechado';
+    return `<div class="info-linha ${String(i) === hojeDia ? 'hoje' : ''}"><span class="dia">${nome}</span><span>${texto}</span></div>`;
+  }).join('');
+
+  const contatos = [];
+  if (LOJA.whatsapp) contatos.push(`<a href="https://wa.me/55${LOJA.whatsapp.replace(/\D/g,'')}" target="_blank"><span class="bola"><img src="icones/whatsapp.webp" alt="WhatsApp" /></span>WhatsApp</a>`);
+  if (LOJA.instagram) contatos.push(`<a href="${LOJA.instagram}" target="_blank"><span class="bola"><img src="icones/instagram.svg" alt="Instagram" /></span>Instagram</a>`);
+  if (LOJA.facebook) contatos.push(`<a href="${LOJA.facebook}" target="_blank"><span class="bola"><img src="icones/facebook.png" alt="Facebook" /></span>Facebook</a>`);
+  document.getElementById('loja-contatos').innerHTML = contatos.join('') || '<span style="color:var(--muted);font-size:13px;">Nenhum contato informado</span>';
+
+  const [{ data: servicos }, { data: barbeiros }, { data: produtos }, { data: planos }] = await Promise.all([
+    sb.from('servicos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
+    sb.from('barbeiros').select('id,nome,foto_url,comissao_pct,mp_conectado').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
+    sb.from('produtos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
+    sb.from('planos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome')
+  ]);
+  SERVICOS = servicos || [];
+  BARBEIROS = barbeiros || [];
+
+  document.getElementById('lista-barbeiros').innerHTML = BARBEIROS.length ? BARBEIROS.map((b) => `
+    <div class="barbeiro-card">
+      <div class="barbeiro-topo">
+        ${b.foto_url
+          ? `<img class="barbeiro-avatar" src="${b.foto_url}" alt="${b.nome}" style="object-fit:cover;" />`
+          : `<div class="barbeiro-avatar">${b.nome.slice(0,1)}</div>`}
+        <div><strong>${b.nome}</strong><div style="color:var(--muted);font-size:12px;">Profissional</div></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="abrirWizard('${b.id}')">Ver serviços e agendar</button>
+    </div>
+  `).join('') : '<p style="color:var(--muted);">Nenhum profissional disponível no momento.</p>';
+
+  PRODUTOS = produtos || [];
+  desenharProdutos();
+
+  PLANOS = planos || [];
+  desenharPlanos();
+
+  document.getElementById('carregando').style.display = 'none';
+  document.getElementById('conteudo').style.display = 'grid';
+  iniciarTempoRealPublico();
+
+  const statusPago = new URLSearchParams(location.search).get('pago');
+  if (statusPago) {
+    history.replaceState(null, '', location.pathname);
+    const mensagens = {
+      1: '✅ Pagamento confirmado! Já avisamos a barbearia.',
+      pendente: '⏳ Pagamento em análise — assim que for aprovado, a barbearia é avisada.',
+      falhou: '❌ O pagamento não foi concluído. Se quiser, tente de novo pelo seu agendamento.'
+    };
+    if (mensagens[statusPago]) alert(mensagens[statusPago]);
+  }
+}
+
+function mostrarAbaCliente(aba) {
+  document.querySelectorAll('.aba-cliente').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === aba));
+  document.querySelectorAll('.aba-conteudo').forEach((d) => { d.style.display = d.id === 'aba-conteudo-' + aba ? 'block' : 'none'; });
+}
+
+function abrirModal(html) {
+  document.getElementById('modal-box').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('aberto');
+}
+function fecharModal() {
+  TELA_ATUAL = null;
+  document.getElementById('modal-overlay').classList.remove('aberto');
+  document.getElementById('modal-box').innerHTML = '';
+  if (INTERVALO_STATUS_PAGAMENTO) {
+    clearInterval(INTERVALO_STATUS_PAGAMENTO);
+    INTERVALO_STATUS_PAGAMENTO = null;
+  }
+}
+
+// Quando o cliente clica em Cartão, a página redireciona pro checkout do
+// Mercado Pago com os botões de forma de pagamento já desabilitados (pra
+// evitar clique duplo antes de sair). Se ele volta pelo botão "voltar" do
+// navegador, o celular às vezes restaura a página congelada exatamente como
+// ficou (bfcache) — inclusive com os botões ainda desabilitados — em vez de
+// carregar tudo de novo. Isso deixava sem jeito de trocar a forma de
+// pagamento. Esse listener detecta essa restauração e reabilita os botões.
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) {
+    document.querySelectorAll('#area-pagamento button:disabled, #area-pagamento-plano button:disabled, #area-pagamento-carrinho button:disabled').forEach((b) => { b.disabled = false; });
+  }
+});
+
+function passosHtml(ativo) {
+  const nomes = ['Serviço', 'Data', 'Horário', 'Confirmar'];
+  return `<div class="passos">${nomes.map((n, i) => `
+    <div class="passo-bola ${i <= ativo ? 'ativo' : ''}">${i+1}</div>
+    ${i < 3 ? '<div class="passo-linha"></div>' : ''}
+  `).join('')}</div>`;
+}
+
+function abrirWizard(barbeiroId) {
+  RESERVA = { barbeiro: BARBEIROS.find((b) => b.id === barbeiroId), servicos: [], data: null, hora: null };
+  telaEscolherServico();
+}
+
+function telaEscolherServico() {
+  TELA_ATUAL = 'servico';
+  const idsEscolhidos = RESERVA.servicos.map((s) => s.id);
+  const totalPreco = RESERVA.servicos.reduce((s, x) => s + Number(x.preco), 0);
+
+  const escolhidosHtml = RESERVA.servicos.map((s) => `
+    <div class="servico-item selecionado-item">
+      <div><div class="nome">${s.nome}</div><div class="dur">${s.duracao_min} min</div></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="preco">${fmtMoeda(s.preco)}</div>
+        <button type="button" class="btn-remove" onclick="removerServicoWizard('${s.id}')">✕</button>
+      </div>
+    </div>`).join('');
+
+  const disponiveisHtml = SERVICOS.filter((s) => !idsEscolhidos.includes(s.id)).map((s) => `
+    <div class="servico-item">
+      <div><div class="nome">${s.nome}</div><div class="dur">${s.duracao_min} min</div></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="preco">${fmtMoeda(s.preco)}</div>
+        <button type="button" class="btn-add" onclick="adicionarServicoWizard('${s.id}')">+</button>
+      </div>
+    </div>`).join('');
+
+  abrirModal(`
+    <h2>Escolha os serviços</h2>
+    ${passosHtml(0)}
+    ${RESERVA.servicos.length ? `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+        <span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Serviços selecionados</span>
+        <span style="font-family:var(--font-mono);color:var(--brass-soft);font-weight:600;font-size:13px;">Total: ${fmtMoeda(totalPreco)}</span>
+      </div>
+      ${escolhidosHtml}
+      <div class="barber-stripe" style="margin:14px 0;"></div>
+    ` : ''}
+    <div>${disponiveisHtml || (SERVICOS.length ? '' : '<p style="color:var(--muted);">Nenhum serviço disponível.</p>')}</div>
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="fecharModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="avancarDeServicos()" ${RESERVA.servicos.length ? '' : 'disabled style="opacity:.5;"'}>Avançar</button>
+    </div>
+  `);
+}
+
+function adicionarServicoWizard(servicoId) {
+  const s = SERVICOS.find((x) => x.id === servicoId);
+  if (s && !RESERVA.servicos.some((x) => x.id === servicoId)) RESERVA.servicos.push(s);
+  telaEscolherServico();
+}
+function removerServicoWizard(servicoId) {
+  RESERVA.servicos = RESERVA.servicos.filter((x) => x.id !== servicoId);
+  telaEscolherServico();
+}
+function avancarDeServicos() {
+  if (!RESERVA.servicos.length) return;
+  telaEscolherData();
+}
+
+function telaEscolherData() {
+  TELA_ATUAL = 'data';
+  const hoje = new Date().toISOString().slice(0,10);
+  abrirModal(`
+    <h2>Escolha a data</h2>
+    ${passosHtml(1)}
+    <label>Data</label>
+    <input type="date" id="input-data-wizard" min="${hoje}" value="${RESERVA.data || hoje}" />
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="telaEscolherServico()">Voltar</button>
+      <button type="button" class="btn btn-primary" onclick="confirmarData()">Avançar</button>
+    </div>
+  `);
+}
+
+async function confirmarData() {
+  RESERVA.data = document.getElementById('input-data-wizard').value;
+  await telaEscolherHorario();
+}
+
+async function telaEscolherHorario() {
+  TELA_ATUAL = 'horario';
+  abrirModal(`
+    <h2>Escolha o horário</h2>
+    ${passosHtml(2)}
+    <p style="color:var(--muted);font-size:13px;margin-bottom:6px;">Carregando horários disponíveis...</p>
+  `);
+
+  const diaSemana = new Date(RESERVA.data + 'T00:00:00').getDay().toString();
+  const h = (LOJA.horarios || {})[diaSemana];
+
+  if (!h || !h.aberto) {
+    abrirModal(`
+      <h2>Escolha o horário</h2>
+      ${passosHtml(2)}
+      <p style="color:var(--muted);">A barbearia não abre nesse dia. Escolha outra data.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="telaEscolherData()">Voltar</button>
+      </div>
+    `);
+    return;
+  }
+
+  const { data: ocupados } = await sb.from('horarios_ocupados').select('*')
+    .eq('owner_id', LOJA.id).eq('barbeiro_id', RESERVA.barbeiro.id)
+    .gte('data_hora', RESERVA.data + 'T00:00:00').lte('data_hora', RESERVA.data + 'T23:59:59');
+
+  const duracaoTotal = RESERVA.servicos.reduce((s, x) => s + x.duracao_min, 0);
+  const livres = gerarHorariosLivres(RESERVA.data, duracaoTotal, ocupados || [], h);
+
+  abrirModal(`
+    <h2>Escolha o horário</h2>
+    ${passosHtml(2)}
+    <p style="color:var(--muted);font-size:13px;margin-bottom:6px;">${new Date(RESERVA.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}</p>
+    ${livres.length ? `<div class="slots-grid">${livres.map((hr) => `<button type="button" class="slot-btn" onclick="escolherHorario('${hr}', this)">${hr}</button>`).join('')}</div>` : '<p style="color:var(--muted);">Sem horários livres nesse dia.</p>'}
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="telaEscolherData()">Voltar</button>
+      <button type="button" class="btn btn-primary" onclick="avancarParaConfirmacao()">Avançar</button>
+    </div>
+  `);
+}
+
+function gerarHorariosLivres(dataISO, duracaoMin, ocupados, horarioDia) {
+  const [hIni, mIni] = horarioDia.inicio.split(':').map(Number);
+  const [hFim, mFim] = horarioDia.fim.split(':').map(Number);
+  const inicioMin = hIni * 60 + mIni;
+  const fimMin = hFim * 60 + mFim;
+  const agora = new Date();
+  const ehHoje = dataISO === agora.toISOString().slice(0,10);
+  const minutoAgora = agora.getHours() * 60 + agora.getMinutes();
+  const livres = [];
+
+  // ocupados vem do banco tipo "2026-07-22T17:00:00+00:00" — os dígitos
+  // HH:MM já são o horário local da barbearia (mesma convenção usada no
+  // resto do app, ex: a Agenda só faz .slice(11,16) pra mostrar a hora).
+  // new Date(string sem fuso) assume o fuso do navegador e desalinha tudo
+  // em relação a esse valor gravado — por isso o cálculo aqui é todo em
+  // "minutos desde a meia-noite" a partir da string, sem usar Date.
+  const ocupadosMin = ocupados
+    .filter((o) => o.data_hora.slice(0, 10) === dataISO)
+    .map((o) => {
+      const inicio = Number(o.data_hora.slice(11, 13)) * 60 + Number(o.data_hora.slice(14, 16));
+      return { inicio, fim: inicio + o.duracao_min };
+    });
+
+  for (let m = inicioMin; m + duracaoMin <= fimMin; m += duracaoMin) {
+    if (ehHoje && m <= minutoAgora) continue;
+    const fim = m + duracaoMin;
+    const conflita = ocupadosMin.some((o) => m < o.fim && fim > o.inicio);
+    if (!conflita) {
+      const hh = String(Math.floor(m / 60)).padStart(2, '0');
+      const mm = String(m % 60).padStart(2, '0');
+      livres.push(`${hh}:${mm}`);
+    }
+  }
+  return livres;
+}
+
+function escolherHorario(hora, btn) {
+  document.querySelectorAll('.slot-btn').forEach((b) => b.classList.remove('selecionado'));
+  btn.classList.add('selecionado');
+  RESERVA.hora = hora;
+}
+
+function avancarParaConfirmacao() {
+  if (!RESERVA.hora) { alert('Escolha um horário.'); return; }
+  telaConfirmar();
+}
+
+function telaConfirmar() {
+  TELA_ATUAL = 'confirmar';
+  const nomesServicos = RESERVA.servicos.map((s) => s.nome).join(' + ');
+  const totalPreco = RESERVA.servicos.reduce((s, x) => s + Number(x.preco), 0);
+  abrirModal(`
+    <h2>Seus dados</h2>
+    ${passosHtml(3)}
+    <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:13px;">
+      <div><strong>${nomesServicos}</strong> com ${RESERVA.barbeiro.nome}</div>
+      <div style="color:var(--muted);">${new Date(RESERVA.data + 'T00:00:00').toLocaleDateString('pt-BR')} às ${RESERVA.hora} · ${fmtMoeda(totalPreco)}</div>
+    </div>
+    <form id="form-cliente">
+      <div style="margin-bottom:12px;"><label>Seu nome</label><input type="text" id="cliente-nome" required /></div>
+      <div style="margin-bottom:12px;"><label>WhatsApp</label><input type="text" id="cliente-telefone" placeholder="21999990000" required /></div>
+      <div id="erro-reserva" style="color:#FF9A9C;font-size:13px;margin-bottom:10px;display:none;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="telaEscolherHorario()">Voltar</button>
+        <button type="submit" class="btn btn-primary">Confirmar agendamento</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-cliente').addEventListener('submit', confirmarReserva);
+}
+
+async function confirmarReserva(e) {
+  e.preventDefault();
+  const nome = document.getElementById('cliente-nome').value.trim();
+  const telefone = document.getElementById('cliente-telefone').value.trim();
+  const erroBox = document.getElementById('erro-reserva');
+  erroBox.style.display = 'none';
+
+  const { data: clienteId, error: erroCliente } = await sb.rpc('obter_ou_criar_cliente', { p_owner_id: LOJA.id, p_nome: nome, p_telefone: telefone });
+  if (erroCliente) { erroBox.textContent = 'Não foi possível salvar seus dados. Tente novamente.'; erroBox.style.display = 'block'; return; }
+
+  const duracaoTotal = RESERVA.servicos.reduce((s, x) => s + x.duracao_min, 0);
+  const totalPreco = RESERVA.servicos.reduce((s, x) => s + Number(x.preco), 0);
+  const agendamentoId = crypto.randomUUID();
+
+  const { error } = await sb.from('agendamentos').insert({
+    id: agendamentoId,
+    owner_id: LOJA.id,
+    cliente_id: clienteId,
+    servico_id: RESERVA.servicos[0].id,
+    barbeiro_id: RESERVA.barbeiro.id,
+    data_hora: `${RESERVA.data}T${RESERVA.hora}:00`,
+    duracao_min: duracaoTotal,
+    valor: totalPreco,
+    status: 'agendado'
+  });
+
+  if (error) {
+    alert('Esse horário acabou de ser reservado por outra pessoa. Escolhemos os horários atualizados pra você.');
+    RESERVA.hora = null;
+    await telaEscolherHorario();
+    return;
+  }
+
+  await sb.rpc('registrar_servicos_agendamento', {
+    p_agendamento_id: agendamentoId,
+    p_itens: RESERVA.servicos.map((s) => ({ servico_id: s.id, preco: s.preco }))
+  });
+
+  RESERVA.clienteId = clienteId;
+  RESERVA.planoAtivo = null;
+  try {
+    const respPlano = await fetch(`${MP_API_URL}/api/plano-cliente?cliente_id=${clienteId}`);
+    const dadosPlano = await respPlano.json();
+    if (dadosPlano.ativo && (dadosPlano.restantes === null || dadosPlano.restantes > 0)) RESERVA.planoAtivo = dadosPlano;
+  } catch (e) {}
+
+  const nomesServicos = RESERVA.servicos.map((s) => s.nome).join(' + ');
+  abrirModal(`
+    <h2>Agendado! ✅</h2>
+    <p style="color:var(--cream);">Seu horário está confirmado:</p>
+    <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin:12px 0;font-size:13px;">
+      <div><strong>${nomesServicos}</strong> com ${RESERVA.barbeiro.nome}</div>
+      <div style="color:var(--muted);">${new Date(RESERVA.data + 'T00:00:00').toLocaleDateString('pt-BR')} às ${RESERVA.hora} · ${fmtMoeda(totalPreco)}</div>
+    </div>
+    <div id="area-pagamento">${formasPagamentoHtml(agendamentoId, RESERVA.barbeiro.mp_conectado)}</div>
+    <button type="button" class="btn btn-primary" style="width:100%;" onclick="fecharModal()">Fechar</button>
+  `);
+}
+
+function formasPagamentoHtml(agendamentoId, mpConectado) {
+  return `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Formas de Pagamento</p>
+    <div class="formas-pagamento">
+      ${RESERVA.planoAtivo ? `
+        <button type="button" class="forma-pagamento" onclick="usarPlanoNoAgendamento('${agendamentoId}', '${RESERVA.clienteId}')">
+          <span class="forma-icone" style="background:rgba(216,216,220,0.15);color:var(--brass-soft);">🎟️</span>
+          <span>Plano</span>
+        </button>
+      ` : ''}
+      ${mpConectado ? `
+        <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'cartao', this)">
+          <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span>
+          <span>Crédito</span>
+        </button>
+        <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'cartao', this)">
+          <span class="forma-icone" style="background:rgba(168,85,247,0.15);color:#A855F7;">💳</span>
+          <span>Débito</span>
+        </button>
+      ` : ''}
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoDinheiro('${agendamentoId}', this)">
+        <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span>
+        <span>Dinheiro</span>
+      </button>
+      ${mpConectado ? `
+        <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'pix', this)">
+          <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
+          <span>Pix</span>
+        </button>
+      ` : ''}
+    </div>
+  `;
+}
+
+function voltarFormasPagamento(agendamentoId) {
+  if (INTERVALO_STATUS_PAGAMENTO) {
+    clearInterval(INTERVALO_STATUS_PAGAMENTO);
+    INTERVALO_STATUS_PAGAMENTO = null;
+  }
+  document.getElementById('area-pagamento').innerHTML = formasPagamentoHtml(agendamentoId, RESERVA.barbeiro.mp_conectado);
+}
+
+async function escolherPagamentoDinheiro(agendamentoId, botao) {
+  const area = document.getElementById('area-pagamento');
+  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agendamento_id: agendamentoId, metodo: 'dinheiro' })
+    });
+    const dados = await resp.json();
+    if (!resp.ok) {
+      alert(dados.erro || 'Não foi possível registrar.');
+      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+      return;
+    }
+    area.innerHTML = `
+      <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:10px;">✅ Combinado! Pague direto na barbearia.</p>
+      <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamento('${agendamentoId}')">← Trocar forma de pagamento</button>
+    `;
+  } catch (e) {
+    alert('Erro ao registrar. Tente novamente.');
+    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+  }
+}
+
+async function escolherPagamento(agendamentoId, metodo, botao) {
+  const area = document.getElementById('area-pagamento');
+  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agendamento_id: agendamentoId, metodo })
+    });
+    const dados = await resp.json();
+    if (!resp.ok) {
+      alert(dados.erro || 'Não foi possível gerar o pagamento.');
+      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+      return;
+    }
+
+    if (metodo === 'cartao') {
+      location.href = dados.link_pagamento;
+      return;
+    }
+
+    area.innerHTML = `
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Escaneie o QR code com o app do seu banco ou copie o código:</p>
+      <div style="background:#fff;border-radius:var(--radius-sm);padding:14px;display:flex;justify-content:center;margin-bottom:12px;">
+        <img src="data:image/png;base64,${dados.qr_code_base64}" alt="QR code Pix" style="width:200px;height:200px;" />
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" readonly value="${dados.qr_code}" style="font-size:11px;" onclick="this.select()" />
+        <button type="button" class="btn" style="flex-shrink:0;" onclick="copiarCodigoPix(this, '${dados.qr_code}')">Copiar</button>
+      </div>
+      <p id="status-pagamento-pix" style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px;">⏳ Aguardando pagamento...</p>
+      <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamento('${agendamentoId}')">← Trocar forma de pagamento</button>
+    `;
+
+    if (INTERVALO_STATUS_PAGAMENTO) clearInterval(INTERVALO_STATUS_PAGAMENTO);
+    INTERVALO_STATUS_PAGAMENTO = setInterval(() => verificarStatusPagamento(agendamentoId), 4000);
+  } catch (e) {
+    alert('Erro ao gerar o pagamento. Tente novamente.');
+    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+  }
+}
+
+function copiarCodigoPix(botao, codigo) {
+  navigator.clipboard.writeText(codigo).then(() => {
+    const textoOriginal = botao.textContent;
+    botao.textContent = 'Copiado!';
+    setTimeout(() => { botao.textContent = textoOriginal; }, 2000);
+  });
+}
+
+async function verificarStatusPagamento(agendamentoId) {
+  // Confere direto na API do Mercado Pago (não só o aviso automático) —
+  // o Pix usa uma notificação diferente da configurada no painel, então
+  // essa checagem ativa garante que o pagamento seja detectado mesmo se
+  // o aviso automático não chegar.
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-verificar-pagamento`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agendamento_id: agendamentoId })
+    });
+    const dados = await resp.json();
+    if (dados.status === 'pago') {
+      clearInterval(INTERVALO_STATUS_PAGAMENTO);
+      const statusEl = document.getElementById('status-pagamento-pix');
+      if (statusEl) statusEl.innerHTML = '✅ <strong style="color:#7FE0A7;">Pagamento confirmado!</strong>';
+    }
+  } catch (e) {}
+}
+
+function abrirModalPlano(planoId) {
+  const plano = PLANOS.find((p) => p.id === planoId);
+  if (!plano) return;
+  abrirModal(`
+    <h2>${plano.nome}</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">${fmtMoeda(plano.preco)}/mês</p>
+    <form id="form-cliente-plano">
+      <div style="margin-bottom:12px;"><label>Seu nome</label><input type="text" id="plano-cliente-nome" required /></div>
+      <div style="margin-bottom:12px;"><label>WhatsApp</label><input type="text" id="plano-cliente-telefone" placeholder="21999990000" required /></div>
+      <div id="erro-plano" style="color:#FF9A9C;font-size:13px;margin-bottom:10px;display:none;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Continuar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-cliente-plano').addEventListener('submit', (e) => confirmarClientePlano(e, planoId));
+}
+
+async function confirmarClientePlano(e, planoId) {
+  e.preventDefault();
+  const plano = PLANOS.find((p) => p.id === planoId);
+  const nomeCliente = document.getElementById('plano-cliente-nome').value.trim();
+  const telefone = document.getElementById('plano-cliente-telefone').value.trim();
+  const erroBox = document.getElementById('erro-plano');
+  erroBox.style.display = 'none';
+
+  const { data: clienteId, error } = await sb.rpc('obter_ou_criar_cliente', { p_owner_id: LOJA.id, p_nome: nomeCliente, p_telefone: telefone });
+  if (error) { erroBox.textContent = 'Não foi possível salvar seus dados. Tente novamente.'; erroBox.style.display = 'block'; return; }
+
+  abrirModal(`
+    <h2>${plano.nome}</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">${fmtMoeda(plano.preco)}/mês</p>
+    <div id="area-pagamento-plano">${formasPagamentoPlanoHtml(planoId, clienteId)}</div>
+  `);
+}
+
+function formasPagamentoPlanoHtml(planoId, clienteId) {
+  return `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Formas de Pagamento</p>
+    <div class="formas-pagamento">
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlano('${planoId}', '${clienteId}', 'cartao', this)">
+        <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span>
+        <span>Cartão</span>
+      </button>
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlano('${planoId}', '${clienteId}', 'pix', this)">
+        <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
+        <span>Pix</span>
+      </button>
+    </div>
+  `;
+}
+
+function voltarFormasPagamentoPlano(planoId, clienteId) {
+  if (INTERVALO_STATUS_PAGAMENTO) { clearInterval(INTERVALO_STATUS_PAGAMENTO); INTERVALO_STATUS_PAGAMENTO = null; }
+  document.getElementById('area-pagamento-plano').innerHTML = formasPagamentoPlanoHtml(planoId, clienteId);
+}
+
+async function escolherPagamentoPlano(planoId, clienteId, metodo, botao) {
+  const area = document.getElementById('area-pagamento-plano');
+  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plano_id: planoId, cliente_id: clienteId, metodo })
+    });
+    const dados = await resp.json();
+    if (!resp.ok) {
+      alert(dados.erro || 'Não foi possível gerar o pagamento.');
+      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+      return;
+    }
+
+    if (metodo === 'cartao') {
+      location.href = dados.link_pagamento;
+      return;
+    }
+
+    area.innerHTML = `
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Escaneie o QR code com o app do seu banco ou copie o código:</p>
+      <div style="background:#fff;border-radius:var(--radius-sm);padding:14px;display:flex;justify-content:center;margin-bottom:12px;">
+        <img src="data:image/png;base64,${dados.qr_code_base64}" alt="QR code Pix" style="width:200px;height:200px;" />
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" readonly value="${dados.qr_code}" style="font-size:11px;" onclick="this.select()" />
+        <button type="button" class="btn" style="flex-shrink:0;" onclick="copiarCodigoPix(this, '${dados.qr_code}')">Copiar</button>
+      </div>
+      <p id="status-pagamento-plano-pix" style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px;">⏳ Aguardando pagamento...</p>
+      <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamentoPlano('${planoId}', '${clienteId}')">← Trocar forma de pagamento</button>
+    `;
+
+    if (INTERVALO_STATUS_PAGAMENTO) clearInterval(INTERVALO_STATUS_PAGAMENTO);
+    INTERVALO_STATUS_PAGAMENTO = setInterval(() => verificarStatusPagamentoPlano(dados.cobranca_id), 4000);
+  } catch (e) {
+    alert('Erro ao gerar o pagamento. Tente novamente.');
+    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+  }
+}
+
+async function verificarStatusPagamentoPlano(cobrancaId) {
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-verificar-pagamento`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cobranca_id: cobrancaId })
+    });
+    const dados = await resp.json();
+    if (dados.status === 'pago') {
+      clearInterval(INTERVALO_STATUS_PAGAMENTO);
+      INTERVALO_STATUS_PAGAMENTO = null;
+      const area = document.getElementById('area-pagamento-plano');
+      if (area) {
+        area.innerHTML = `
+          <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:14px;">✅ <strong>Plano ativado!</strong> Já pode usar no seu próximo agendamento.</p>
+          <button type="button" class="btn btn-primary" style="width:100%;" onclick="fecharModal()">Fechar</button>
+        `;
+      }
+    }
+  } catch (e) {}
+}
+
+async function usarPlanoNoAgendamento(agendamentoId, clienteId) {
+  const area = document.getElementById('area-pagamento');
+  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/plano-cliente`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cliente_id: clienteId, agendamento_id: agendamentoId })
+    });
+    const dados = await resp.json();
+    if (!resp.ok) {
+      alert(dados.erro || 'Não foi possível usar o plano.');
+      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+      return;
+    }
+    const restantesTxt = dados.restantes === null ? 'uso ilimitado' : `${dados.restantes} uso(s) restante(s) esse mês`;
+    area.innerHTML = `<p style="font-size:13px;color:#7FE0A7;text-align:center;">✅ Agendamento confirmado com o plano ${dados.plano_nome}! (${restantesTxt})</p>`;
+  } catch (e) {
+    alert('Erro ao usar o plano. Tente novamente.');
+    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+  }
+}
+
+let LOJA_PRODUTOS_ATIVA = null;
+
+// Com um barbeiro só (plano Bronze) não existe "escolher entre lojas" —
+// mostra os produtos direto, sem a camada de agrupamento por barbeiro.
+// Acima do Bronze (2+ barbeiros) mantém a navegação por loja.
+function umBarbeiroSo() { return BARBEIROS.length === 1; }
+
+function desenharProdutos() {
+  if (umBarbeiroSo()) {
+    LOJA_PRODUTOS_ATIVA = BARBEIROS[0].id;
+    desenharProdutosDaLoja(LOJA_PRODUTOS_ATIVA, true);
+    return;
+  }
+  if (!LOJA_PRODUTOS_ATIVA) desenharListaLojas();
+  else desenharProdutosDaLoja(LOJA_PRODUTOS_ATIVA);
+}
+
+const CORES_BARBEIRO = ['#D8B4FE', '#7DD3FC', '#FCA5A5', '#86EFAC', '#FDBA74', '#F0ABFC', '#67E8F9', '#FDE047'];
+function corBarbeiro(barbeiroId) {
+  const indice = BARBEIROS.findIndex((b) => b.id === barbeiroId);
+  return CORES_BARBEIRO[(indice < 0 ? 0 : indice) % CORES_BARBEIRO.length];
+}
+
+function desenharListaLojas() {
+  const porBarbeiro = {};
+  PRODUTOS.forEach((p) => {
+    if (!p.barbeiro_id) return;
+    if (!porBarbeiro[p.barbeiro_id]) porBarbeiro[p.barbeiro_id] = [];
+    porBarbeiro[p.barbeiro_id].push(p);
+  });
+  const idsBarbeiros = Object.keys(porBarbeiro);
+  document.getElementById('lista-produtos').innerHTML = idsBarbeiros.length ? idsBarbeiros.map((id) => {
+    const barbeiro = BARBEIROS.find((b) => b.id === id);
+    const nome = barbeiro ? barbeiro.nome : 'Barbeiro';
+    const cor = corBarbeiro(id);
+    return `
+      <div class="produto-item" style="cursor:pointer;border-left:4px solid ${cor};background:linear-gradient(90deg, ${cor}1f, var(--surface-2) 22%);" onclick="abrirLojaBarbeiro('${id}')">
+        <span class="nome">🏪 Loja do ${nome}</span>
+        <span class="preco">${porBarbeiro[id].length} produto(s)</span>
+      </div>`;
+  }).join('') : '<p style="color:var(--muted);">Nenhuma loja de produtos disponível no momento.</p>';
+  document.getElementById('carrinho-barra').innerHTML = '';
+}
+
+function abrirLojaBarbeiro(barbeiroId) {
+  if (Object.keys(CARRINHO).length && LOJA_PRODUTOS_ATIVA !== barbeiroId) {
+    if (!confirm('Trocar de loja limpa o carrinho atual. Continuar?')) return;
+    CARRINHO = {};
+  }
+  LOJA_PRODUTOS_ATIVA = barbeiroId;
+  desenharProdutos();
+}
+
+function voltarListaLojas() {
+  CARRINHO = {};
+  LOJA_PRODUTOS_ATIVA = null;
+  desenharProdutos();
+}
+
+function desenharProdutosDaLoja(barbeiroId, modoDireto) {
+  const barbeiro = BARBEIROS.find((b) => b.id === barbeiroId);
+  // Continua filtrando por barbeiro mesmo no modo direto: produto sem
+  // barbeiro vinculado não pode ser comprado (mp-criar-cobranca rejeita),
+  // então mostrar pro cliente só geraria erro no carrinho.
+  const produtosDaLoja = PRODUTOS.filter((p) => p.barbeiro_id === barbeiroId);
+  const cabecalho = modoDireto ? '' : `
+    <button type="button" class="btn" style="margin-bottom:10px;" onclick="voltarListaLojas()">← Todas as lojas</button>
+    <h3 style="margin-bottom:10px;">🏪 Loja do ${barbeiro ? barbeiro.nome : ''}</h3>
+  `;
+  const linhas = produtosDaLoja.length ? produtosDaLoja.map((p) => {
+    const qtd = CARRINHO[p.id] || 0;
+    const semEstoque = Number(p.estoque) <= 0;
+    return `
+      <div class="produto-item">
+        <span class="nome">${p.nome}</span>
+        <span class="preco">${fmtMoeda(p.preco)}</span>
+        ${semEstoque ? '<span style="color:var(--muted);font-size:12px;">Esgotado</span>' : `
+          <div class="produto-qtd">
+            ${qtd > 0 ? `<button type="button" onclick="alterarQtdCarrinho('${p.id}', -1)">−</button><span>${qtd}</span>` : ''}
+            <button type="button" onclick="alterarQtdCarrinho('${p.id}', 1)" ${qtd >= Number(p.estoque) ? 'disabled' : ''}>+</button>
+          </div>
+        `}
+      </div>`;
+  }).join('') : `<p style="color:var(--muted);">Nenhum produto disponível${modoDireto ? '' : ' nessa loja'}.</p>`;
+  document.getElementById('lista-produtos').innerHTML = cabecalho + linhas;
+  desenharCarrinhoBarra();
+}
+
+let BARBEIRO_PLANOS_ATIVO = null;
+
+function desenharPlanos() {
+  if (umBarbeiroSo()) {
+    BARBEIRO_PLANOS_ATIVO = BARBEIROS[0].id;
+    desenharPlanosDoBarbeiro(BARBEIRO_PLANOS_ATIVO, true);
+    return;
+  }
+  if (!BARBEIRO_PLANOS_ATIVO) desenharListaBarbeirosPlanos();
+  else desenharPlanosDoBarbeiro(BARBEIRO_PLANOS_ATIVO);
+}
+
+function desenharListaBarbeirosPlanos() {
+  const porBarbeiro = {};
+  PLANOS.forEach((p) => {
+    if (!p.barbeiro_id) return;
+    if (!porBarbeiro[p.barbeiro_id]) porBarbeiro[p.barbeiro_id] = [];
+    porBarbeiro[p.barbeiro_id].push(p);
+  });
+  const idsBarbeiros = Object.keys(porBarbeiro);
+  document.getElementById('lista-planos').innerHTML = idsBarbeiros.length ? idsBarbeiros.map((id) => {
+    const barbeiro = BARBEIROS.find((b) => b.id === id);
+    const nome = barbeiro ? barbeiro.nome : 'Barbeiro';
+    const cor = corBarbeiro(id);
+    return `
+      <div class="produto-item" style="cursor:pointer;border-left:4px solid ${cor};background:linear-gradient(90deg, ${cor}1f, var(--surface-2) 22%);" onclick="abrirPlanosBarbeiro('${id}')">
+        <span class="nome">🎟️ Planos do ${nome}</span>
+        <span class="preco">${porBarbeiro[id].length} plano(s)</span>
+      </div>`;
+  }).join('') : '<p style="color:var(--muted);">Nenhum plano disponível no momento.</p>';
+}
+
+function abrirPlanosBarbeiro(barbeiroId) {
+  BARBEIRO_PLANOS_ATIVO = barbeiroId;
+  desenharPlanos();
+}
+
+function voltarListaBarbeirosPlanos() {
+  BARBEIRO_PLANOS_ATIVO = null;
+  desenharPlanos();
+}
+
+function desenharPlanosDoBarbeiro(barbeiroId, modoDireto) {
+  const barbeiro = BARBEIROS.find((b) => b.id === barbeiroId);
+  // igual aos produtos: só mostra plano com barbeiro vinculado
+  const planosDoBarbeiro = PLANOS.filter((p) => p.barbeiro_id === barbeiroId);
+  const cabecalho = modoDireto ? '' : `
+    <button type="button" class="btn" style="margin-bottom:10px;" onclick="voltarListaBarbeirosPlanos()">← Todos os barbeiros</button>
+    <h3 style="margin-bottom:10px;">🎟️ Planos do ${barbeiro ? barbeiro.nome : ''}</h3>
+  `;
+  const linhas = planosDoBarbeiro.length ? planosDoBarbeiro.map((p) => `
+    <div class="plano-card-cliente">
+      <div class="topo">
+        <h3 style="color:var(--cream);font-size:16px;">${p.nome}${p.badge ? `<span class="plano-badge">${p.badge}</span>` : ''}</h3>
+      </div>
+      ${p.descricao ? `<p class="plano-desc">${p.descricao}</p>` : ''}
+      <div class="plano-inclusos">${(p.servicos_inclusos||[]).map((s) => `<span>${s}</span>`).join('')}</div>
+      <div class="plano-rodape">
+        <span class="plano-preco">${fmtMoeda(p.preco)}<span>/mês</span></span>
+        <button type="button" class="btn btn-primary" onclick="abrirModalPlano('${p.id}')">Quero esse plano</button>
+      </div>
+    </div>`).join('') : `<p style="color:var(--muted);">Nenhum plano disponível${modoDireto ? '' : ' desse barbeiro'}.</p>`;
+  document.getElementById('lista-planos').innerHTML = cabecalho + linhas;
+}
+
+function alterarQtdCarrinho(produtoId, delta) {
+  const produto = PRODUTOS.find((p) => p.id === produtoId);
+  if (!produto) return;
+  const atual = CARRINHO[produtoId] || 0;
+  const novo = Math.max(0, Math.min(Number(produto.estoque), atual + delta));
+  if (novo === 0) delete CARRINHO[produtoId];
+  else CARRINHO[produtoId] = novo;
+  desenharProdutos();
+}
+
+function desenharCarrinhoBarra() {
+  const itens = Object.entries(CARRINHO);
+  const barra = document.getElementById('carrinho-barra');
+  if (!itens.length) { barra.innerHTML = ''; return; }
+  const total = itens.reduce((s, [id, qtd]) => {
+    const p = PRODUTOS.find((x) => x.id === id);
+    return s + (p ? Number(p.preco) * qtd : 0);
+  }, 0);
+  const resumo = itens.map(([id, qtd]) => {
+    const p = PRODUTOS.find((x) => x.id === id);
+    return p ? `${qtd}x ${p.nome}` : '';
+  }).filter(Boolean).join(' + ');
+  barra.innerHTML = `
+    <div>
+      <div style="font-size:12px;color:var(--muted);">${resumo}</div>
+      <div style="font-family:var(--font-mono);color:var(--brass-soft);font-weight:600;font-size:16px;">${fmtMoeda(total)}</div>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="abrirCheckoutCarrinho()">Gerar cobrança</button>
+  `;
+}
+
+function itensCarrinhoParaEnvio() {
+  return Object.entries(CARRINHO).map(([produto_id, quantidade]) => ({ produto_id, quantidade }));
+}
+
+function abrirCheckoutCarrinho() {
+  abrirModal(`
+    <h2>Finalizar compra</h2>
+    <form id="form-cliente-carrinho">
+      <div style="margin-bottom:12px;"><label>Seu nome</label><input type="text" id="carrinho-cliente-nome" required /></div>
+      <div style="margin-bottom:12px;"><label>WhatsApp</label><input type="text" id="carrinho-cliente-telefone" placeholder="21999990000" required /></div>
+      <div id="erro-carrinho" style="color:#FF9A9C;font-size:13px;margin-bottom:10px;display:none;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Continuar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-cliente-carrinho').addEventListener('submit', confirmarClienteCarrinho);
+}
+
+async function confirmarClienteCarrinho(e) {
+  e.preventDefault();
+  const nomeCliente = document.getElementById('carrinho-cliente-nome').value.trim();
+  const telefone = document.getElementById('carrinho-cliente-telefone').value.trim();
+  const erroBox = document.getElementById('erro-carrinho');
+  erroBox.style.display = 'none';
+
+  const { data: clienteId, error } = await sb.rpc('obter_ou_criar_cliente', { p_owner_id: LOJA.id, p_nome: nomeCliente, p_telefone: telefone });
+  if (error) { erroBox.textContent = 'Não foi possível salvar seus dados. Tente novamente.'; erroBox.style.display = 'block'; return; }
+
+  const total = Object.entries(CARRINHO).reduce((s, [id, qtd]) => {
+    const p = PRODUTOS.find((x) => x.id === id);
+    return s + (p ? Number(p.preco) * qtd : 0);
+  }, 0);
+
+  abrirModal(`
+    <h2>Finalizar compra</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">${fmtMoeda(total)}</p>
+    <div id="area-pagamento-carrinho">${formasPagamentoCarrinhoHtml(clienteId)}</div>
+  `);
+}
+
+function formasPagamentoCarrinhoHtml(clienteId) {
+  return `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Formas de Pagamento</p>
+    <div class="formas-pagamento">
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoCarrinho('${clienteId}', 'cartao', this)">
+        <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span>
+        <span>Cartão</span>
+      </button>
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoCarrinhoDinheiro('${clienteId}', this)">
+        <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span>
+        <span>Dinheiro</span>
+      </button>
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoCarrinho('${clienteId}', 'pix', this)">
+        <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
+        <span>Pix</span>
+      </button>
+    </div>
+  `;
+}
+
+function voltarFormasPagamentoCarrinho(clienteId) {
+  if (INTERVALO_STATUS_PAGAMENTO) { clearInterval(INTERVALO_STATUS_PAGAMENTO); INTERVALO_STATUS_PAGAMENTO = null; }
+  document.getElementById('area-pagamento-carrinho').innerHTML = formasPagamentoCarrinhoHtml(clienteId);
+}
+
+async function escolherPagamentoCarrinhoDinheiro(clienteId, botao) {
+  const area = document.getElementById('area-pagamento-carrinho');
+  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itens: itensCarrinhoParaEnvio(), cliente_id: clienteId, metodo: 'dinheiro' })
+    });
+    const dados = await resp.json();
+    if (!resp.ok) {
+      alert(dados.erro || 'Não foi possível registrar.');
+      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+      return;
+    }
+    CARRINHO = {};
+    area.innerHTML = `
+      <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:14px;">✅ Combinado! Pague direto na barbearia.</p>
+      <button type="button" class="btn btn-primary" style="width:100%;" onclick="fecharModal()">Fechar</button>
+    `;
+  } catch (e) {
+    alert('Erro ao registrar. Tente novamente.');
+    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+  }
+}
+
+async function escolherPagamentoCarrinho(clienteId, metodo, botao) {
+  const area = document.getElementById('area-pagamento-carrinho');
+  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itens: itensCarrinhoParaEnvio(), cliente_id: clienteId, metodo })
+    });
+    const dados = await resp.json();
+    if (!resp.ok) {
+      alert(dados.erro || 'Não foi possível gerar o pagamento.');
+      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+      return;
+    }
+
+    if (metodo === 'cartao') {
+      location.href = dados.link_pagamento;
+      return;
+    }
+
+    area.innerHTML = `
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Escaneie o QR code com o app do seu banco ou copie o código:</p>
+      <div style="background:#fff;border-radius:var(--radius-sm);padding:14px;display:flex;justify-content:center;margin-bottom:12px;">
+        <img src="data:image/png;base64,${dados.qr_code_base64}" alt="QR code Pix" style="width:200px;height:200px;" />
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" readonly value="${dados.qr_code}" style="font-size:11px;" onclick="this.select()" />
+        <button type="button" class="btn" style="flex-shrink:0;" onclick="copiarCodigoPix(this, '${dados.qr_code}')">Copiar</button>
+      </div>
+      <p id="status-pagamento-carrinho-pix" style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px;">⏳ Aguardando pagamento...</p>
+      <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamentoCarrinho('${clienteId}')">← Trocar forma de pagamento</button>
+    `;
+
+    if (INTERVALO_STATUS_PAGAMENTO) clearInterval(INTERVALO_STATUS_PAGAMENTO);
+    INTERVALO_STATUS_PAGAMENTO = setInterval(() => verificarStatusPagamentoCarrinho(dados.cobranca_id), 4000);
+  } catch (e) {
+    alert('Erro ao gerar o pagamento. Tente novamente.');
+    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+  }
+}
+
+async function verificarStatusPagamentoCarrinho(cobrancaId) {
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-verificar-pagamento`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cobranca_id: cobrancaId })
+    });
+    const dados = await resp.json();
+    if (dados.status === 'pago') {
+      clearInterval(INTERVALO_STATUS_PAGAMENTO);
+      INTERVALO_STATUS_PAGAMENTO = null;
+      CARRINHO = {};
+      const area = document.getElementById('area-pagamento-carrinho');
+      if (area) {
+        area.innerHTML = `
+          <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:14px;">✅ <strong>Pagamento confirmado!</strong> Seus produtos já estão separados.</p>
+          <button type="button" class="btn btn-primary" style="width:100%;" onclick="fecharModal()">Fechar</button>
+        `;
+      }
+    }
+  } catch (e) {}
+}
+
+function iniciarTempoRealPublico() {
+  const canal = sb.channel('agendar-mudancas-' + LOJA.id);
+  canal.on('postgres_changes', { event: '*', schema: 'public', table: 'agendamentos', filter: `owner_id=eq.${LOJA.id}` }, () => {
+    // se o cliente está olhando a grade de horários agora, atualiza sozinho
+    // pra tirar da lista um horário que outra pessoa acabou de reservar.
+    if (TELA_ATUAL === 'horario' && RESERVA && RESERVA.data) telaEscolherHorario();
+  });
+  canal.on('postgres_changes', { event: '*', schema: 'public', table: 'produtos', filter: `owner_id=eq.${LOJA.id}` }, async () => {
+    const { data } = await sb.from('produtos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome');
+    PRODUTOS = data || [];
+    desenharProdutos();
+  });
+  canal.on('postgres_changes', { event: '*', schema: 'public', table: 'planos', filter: `owner_id=eq.${LOJA.id}` }, async () => {
+    const { data } = await sb.from('planos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome');
+    PLANOS = data || [];
+    desenharPlanos();
+  });
+  canal.subscribe();
+}
+
+iniciar();
+</script>
+
+</body>
+</html>

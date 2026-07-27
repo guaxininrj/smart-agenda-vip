@@ -1,0 +1,15 @@
+# dependências (reinstaláveis com npm install)
+node_modules/
+
+# configuração local da Vercel
+.vercel/
+
+# SEGREDOS — nunca versionar. As chaves ficam no painel da Vercel.
+.env
+.env.*
+!.env.example
+
+# arquivos temporários do sistema
+Thumbs.db
+desktop.ini
+.DS_Store

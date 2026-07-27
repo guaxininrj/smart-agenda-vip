@@ -1,0 +1,2319 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<script>if (location.hostname !== 'barberbook-smartlink.vercel.app') document.write('<base href="https://barberbook-smartlink.vercel.app/">');</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Agenda VIP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #060607;
+  --surface: #0E0E10;
+  --surface-2: #141417;
+  --brass: #FFFFFF;
+  --brass-soft: #D8D8DC;
+  --cream: #E8E8EA;
+  --muted: #9A9AA0;
+  --stripe-red: #E01020;
+  --stripe-green: #25D366;
+  --border: rgba(232, 232, 234, 0.08);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --font-display: 'Oswald', sans-serif;
+  --font-body: 'Work Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--cream); font-family: var(--font-body); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+h1, h2, h3, h4 { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; margin: 0; color: var(--cream); }
+h1 { font-size: 28px; letter-spacing: 0.04em; }
+h2 { font-size: 20px; }
+h3 { font-size: 15px; color: var(--brass-soft); }
+button { font-family: var(--font-body); cursor: pointer; border: none; }
+input, select { font-family: var(--font-body); background: var(--surface-2); border: 1px solid var(--border); color: var(--cream); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px; outline: none; }
+
+.barber-stripe { height: 3px; width: 100%; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--brass), var(--cream), var(--brass), transparent); opacity: 0.85; }
+.barber-stripe.thin { height: 2px; opacity: 0.6; }
+
+.app-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 24px; }
+.sidebar-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px; }
+.sidebar-brand .mark { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; background: #fff; border: 1px solid var(--border); flex-shrink: 0; }
+.sidebar-brand strong { font-family: var(--font-display); text-transform: uppercase; font-size: 14px; letter-spacing: 0.05em; }
+.nav-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--muted); font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+.nav-item:hover { background: var(--surface-2); color: var(--cream); }
+.nav-item.active { background: var(--surface-2); color: var(--brass-soft); position: relative; }
+.nav-item.active::before { content: ''; position: absolute; left: -16px; top: 8px; bottom: 8px; width: 3px; background: var(--brass); border-radius: 3px; }
+.main-area { padding: 32px 40px; overflow-y: auto; }
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+.page-header .eyebrow { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; display: block; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; min-width: 0; overflow-x: auto; }
+.grid { display: grid; gap: 16px; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.topo-mobile { display: none; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 80; }
+.topo-mobile .marca { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; font-size: 14px; }
+.topo-mobile img { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; background: #fff; border: 1px solid var(--border); }
+.btn-hamburguer { background: none; border: 1px solid var(--border); color: var(--cream); font-size: 18px; line-height: 1; cursor: pointer; padding: 8px 12px; border-radius: var(--radius-sm); }
+.fundo-menu-mobile { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; }
+@media (max-width: 900px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr 1fr; }
+  .app-shell { grid-template-columns: 1fr; }
+  .topo-mobile { display: flex; }
+  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; z-index: 100; transform: translateX(-100%); transition: transform 0.25s ease; }
+  .sidebar.aberta { transform: translateX(0); }
+  .fundo-menu-mobile.aberta { display: block; }
+}
+@media (max-width: 600px) {
+  .main-area { padding: 20px 16px; }
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+}
+.busca-wrap { position: relative; margin-bottom: 16px; }
+.busca-wrap .busca-icone { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.6; pointer-events: none; }
+.busca-wrap input { width: 100%; padding-left: 38px; }
+
+@media (max-width: 700px) {
+  table.tabela-responsiva thead { display: none; }
+  table.tabela-responsiva, table.tabela-responsiva tbody, table.tabela-responsiva tr, table.tabela-responsiva td { display: block; width: 100%; }
+  table.tabela-responsiva tr { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 10px; padding: 10px 12px; position: relative; }
+  table.tabela-responsiva tr:last-child { margin-bottom: 0; }
+  table.tabela-responsiva td { border-bottom: none; padding: 6px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: right; }
+  table.tabela-responsiva td::before { content: attr(data-label); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; flex-shrink: 0; }
+  table.tabela-responsiva td:not([data-label]) { justify-content: center; text-align: center; }
+  table.tabela-responsiva td select, table.tabela-responsiva td input { width: auto; }
+  table.tabela-responsiva td.detalhe { display: none; }
+  table.tabela-responsiva tr.linha-expandida td.detalhe { display: flex; }
+  table.tabela-responsiva td.col-seta { justify-content: center; padding: 4px 0 0; margin-top: 4px; border-top: 1px solid var(--border); }
+}
+@media (min-width: 701px) {
+  table.tabela-responsiva td.col-seta { display: none; }
+}
+.btn-seta { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; background: none; border: none; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; padding: 6px; }
+
+.stat-card { display: flex; flex-direction: column; gap: 8px; }
+.stat-card .value { font-family: var(--font-mono); font-size: 26px; color: var(--brass-soft); font-weight: 500; }
+.stat-card .label { color: var(--muted); font-size: 13px; }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; }
+.btn-primary { background: var(--brass); color: #000; }
+.btn-primary:hover { background: var(--brass-soft); }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--cream); }
+.btn-danger { background: transparent; border: 1px solid var(--stripe-red); color: #FF9A9C; padding: 4px 10px; font-size: 12px; }
+.btn-mp { display: inline-flex; align-items: center; gap: 6px; background: #00B1EA; color: #fff; border: none; border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
+.btn-mp:hover { background: #009EE3; }
+.formas-pagamento { display: flex; gap: 14px; justify-content: space-around; margin-bottom: 16px; flex-wrap: wrap; }
+.forma-pagamento { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; font-size: 12px; color: var(--cream); font-family: var(--font-body); }
+.forma-pagamento:disabled { opacity: 0.5; cursor: default; }
+.forma-icone { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.btn-whatsapp { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #25D366; color: #fff; border: none; border-radius: var(--radius-sm); padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn-whatsapp:hover { background: #1EBE5A; }
+
+.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.badge-green { background: rgba(37, 211, 102, 0.18); color: #7FE0A7; }
+.badge-red { background: rgba(224, 16, 32, 0.18); color: #FF9A9C; }
+.badge-brass { background: rgba(232, 232, 234, 0.12); color: var(--cream); }
+.badge-muted { background: var(--surface-2); color: var(--muted); }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+td { padding: 12px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+
+.empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+.empty-state h3 { color: var(--cream); margin-bottom: 6px; }
+
+.page { display: none; }
+.page.active { display: block; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 250; padding: 20px; }
+.modal-overlay.aberto { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 400px; box-shadow: var(--shadow); }
+.modal h2 { margin-bottom: 16px; }
+.modal form { display: flex; flex-direction: column; gap: 12px; }
+.modal label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block; }
+.modal input, .modal select { width: 100%; }
+.modal-actions { display: flex; gap: 10px; margin-top: 6px; }
+.modal-actions .btn { flex: 1; justify-content: center; }
+
+#form-config label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block; }
+#form-config input, #form-config textarea { width: 100%; }
+</style>
+</head>
+<body>
+
+<div class="topo-mobile">
+  <div class="marca">
+    <img id="logo-barbearia-mobile" src="logo.png" alt="Smart Agenda VIP" />
+    <div>
+      <span id="nome-barbearia-mobile">Smart Agenda VIP</span>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span class="badge badge-brass" id="tag-plano-plataforma-mobile" style="display:none;font-size:10px;"></span>
+        <span id="tag-vencimento-plataforma-mobile" style="display:none;color:var(--muted);font-size:10px;"></span>
+      </div>
+    </div>
+  </div>
+  <button class="btn-hamburguer" id="btn-abrir-menu">☰</button>
+</div>
+<div class="fundo-menu-mobile" id="fundo-menu-mobile"></div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img class="mark" id="logo-barbearia" src="logo.png" alt="Smart Agenda VIP" />
+      <div>
+        <strong id="nome-barbearia">Smart Agenda VIP</strong>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+          <span class="badge badge-brass" id="tag-plano-plataforma" style="display:none;"></span>
+          <span id="tag-vencimento-plataforma" style="display:none;color:var(--muted);font-size:11px;"></span>
+        </div>
+      </div>
+    </div>
+    <ul class="nav-list" id="nav-list">
+      <li class="nav-item active" data-page="painel">Painel</li>
+      <li class="nav-item" data-page="agenda">Agenda</li>
+      <li class="nav-item" data-page="clientes">Clientes</li>
+      <li class="nav-item" data-page="servicos">Serviços</li>
+      <li class="nav-item" data-page="produtos">Produtos</li>
+      <li class="nav-item" data-page="planos">Planos</li>
+      <li class="nav-item" data-page="barbeiros">Barbeiros</li>
+      <li class="nav-item" data-page="financeiro">Financeiro</li>
+      <li class="nav-item" data-page="config">Configurações</li>
+    </ul>
+    <button class="btn btn-primary" id="btn-renovar-plano" style="width: 100%;" onclick="abrirModalRenovarPlano()">Renovar plano</button>
+    <a href="https://wa.me/5521994564209" target="_blank" rel="noopener" class="btn btn-ghost" style="width: 100%; margin-top: 8px; text-align: center; text-decoration: none; display: block; box-sizing: border-box;">💬 Suporte</a>
+    <div style="margin-top: auto;">
+      <div class="barber-stripe thin" style="margin-bottom: 16px;"></div>
+      <button class="btn btn-ghost" id="btn-sair" style="width: 100%;">Sair</button>
+    </div>
+  </aside>
+
+  <main class="main-area">
+
+    <!-- PAINEL -->
+    <section class="page active" id="painel">
+      <div class="page-header">
+        <div><span class="eyebrow">Visão geral</span><h1>Painel do dia</h1></div>
+        <div id="painel-clima" style="text-align:right;"></div>
+      </div>
+      <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
+      <div id="onboarding-checklist" style="display:none;"></div>
+      <div class="grid grid-4" style="margin-bottom: 24px;">
+        <div class="card stat-card"><span class="value" id="p-agendamentos-hoje">0</span><span class="label">Agendamentos hoje</span></div>
+        <div class="card stat-card"><span class="value" id="p-concluidos-hoje">0</span><span class="label">Cortes concluídos</span></div>
+        <div class="card stat-card"><span class="value" id="p-faturado-hoje">R$ 0,00</span><span class="label">Faturado hoje</span></div>
+        <div class="card stat-card"><span class="value" id="p-saldo-hoje">R$ 0,00</span><span class="label">Saldo do caixa hoje</span></div>
+      </div>
+      <p class="eyebrow" style="margin-bottom: 10px;">Agenda de hoje por barbeiro</p>
+      <div class="grid grid-2" id="p-por-barbeiro"></div>
+    </section>
+
+    <!-- AGENDA -->
+    <section class="page" id="agenda">
+      <div class="page-header">
+        <div><span class="eyebrow">Gestão de horários</span><h1>Agenda</h1></div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <label style="text-transform:none;color:var(--muted);font-size:13px;margin:0;">A partir de</label>
+          <input type="date" id="input-data-agenda" />
+          <button class="btn btn-primary" onclick="abrirModalNovoAgendamento()">+ Novo agendamento</button>
+        </div>
+      </div>
+      <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
+      <div class="busca-wrap">
+        <span class="busca-icone">🔍</span>
+        <input type="text" id="busca-agenda" placeholder="Buscar por nome do cliente..." oninput="filtrarAgenda()" />
+      </div>
+      <div class="card">
+        <table class="tabela-responsiva">
+          <thead><tr><th>Data / Hora</th><th>Cliente</th><th>Serviço</th><th>Barbeiro</th><th>Status</th><th>Valor</th><th>Pagamento</th><th></th><th class="col-seta"></th></tr></thead>
+          <tbody id="corpo-agenda"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section class="page" id="clientes">
+      <div class="page-header">
+        <div><span class="eyebrow">Base de clientes</span><h1>Clientes</h1></div>
+        <button class="btn btn-primary" onclick="abrirModalNovoCliente()">+ Novo cliente</button>
+      </div>
+      <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
+      <div class="busca-wrap">
+        <span class="busca-icone">🔍</span>
+        <input type="text" id="busca-clientes" placeholder="Buscar por nome..." oninput="filtrarClientes()" />
+      </div>
+      <div class="card">
+        <table class="tabela-responsiva">
+          <thead><tr><th>Nome</th><th>Telefone</th><th>Última visita</th><th>Histórico</th><th>Plano</th><th></th><th class="col-seta"></th></tr></thead>
+          <tbody id="corpo-clientes"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SERVIÇOS -->
+    <section class="page" id="servicos">
+      <div class="page-header">
+        <div><span class="eyebrow">Catálogo</span><h1>Serviços</h1></div>
+        <button class="btn btn-primary" onclick="abrirModalNovoServico()">+ Novo serviço</button>
+      </div>
+      <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
+      <div class="grid grid-3" id="grid-servicos"></div>
+    </section>
+
+    <!-- PRODUTOS -->
+    <section class="page" id="produtos">
+      <div class="page-header">
+        <div><span class="eyebrow">Itens avulsos</span><h1>Produtos</h1></div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn" id="btn-criar-loja" onclick="abrirModalCriarLoja()">+ Criar loja</button>
+          <button class="btn btn-primary" onclick="abrirModalNovoProduto()">+ Novo produto</button>
+        </div>
+      </div>
+      <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <label style="margin:0;text-transform:none;color:var(--muted);font-size:13px;">Vendas do período</label>
+        <select id="select-periodo-vendas" style="width:auto;" onchange="mudarPeriodoVendas(this.value)">
+          <option value="dia">Hoje</option>
+          <option value="7dias">Últimos 7 dias</option>
+          <option value="14dias">Últimos 14 dias</option>
+          <option value="21dias">Últimos 21 dias</option>
+          <option value="mes">Mês</option>
+        </select>
+      </div>
+      <div id="lista-lojas"></div>
+    </section>
+
+    <!-- PLANOS -->
+    <section class="page" id="planos">
+      <div class="page-header">
+        <div><span class="eyebrow">Assinaturas mensais</span><h1>Planos</h1></div>
+        <button class="btn btn-primary" onclick="abrirModalNovoPlano()">+ Novo plano</button>
+      </div>
+      <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
+      <div id="lista-planos-por-barbeiro"></div>
+    </section>
+
+    <!-- BARBEIROS -->
+    <section class="page" id="barbeiros">
+      <div class="page-header">
+        <div><span class="eyebrow">Equipe</span><h1>Barbeiros</h1></div>
+        <button class="btn btn-primary" onclick="abrirModalNovoBarbeiro()">+ Novo barbeiro</button>
+      </div>
+      <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
+      <div class="card">
+        <table class="tabela-responsiva">
+          <thead><tr><th>Foto</th><th>Nome</th><th>Comissão</th><th>Cortes concluídos</th><th>Faturado</th><th>Comissão a pagar</th><th></th></tr></thead>
+          <tbody id="corpo-barbeiros"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FINANCEIRO -->
+    <section class="page" id="financeiro">
+      <div class="page-header">
+        <div><span class="eyebrow">Caixa</span><h1>Financeiro</h1></div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="month" id="input-mes-financeiro" />
+          <button class="btn btn-primary" onclick="abrirModalNovaDespesa()">+ Novo lançamento</button>
+          <button class="btn btn-danger" onclick="apagarTudoFinanceiro()">🗑 Apagar tudo do mês</button>
+        </div>
+      </div>
+      <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
+      <div class="grid grid-3" style="margin-bottom: 24px;">
+        <div class="card stat-card"><span class="value" id="f-entradas" style="color: #7FE0A7;">R$ 0,00</span><span class="label">Entradas</span></div>
+        <div class="card stat-card"><span class="value" id="f-saidas" style="color: #FF9A9C;">R$ 0,00</span><span class="label">Saídas</span></div>
+        <div class="card stat-card"><span class="value" id="f-saldo">R$ 0,00</span><span class="label">Saldo</span></div>
+      </div>
+      <div class="card">
+        <table class="tabela-responsiva">
+          <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Forma</th><th>Valor</th><th></th></tr></thead>
+          <tbody id="corpo-financeiro"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CONFIGURAÇÕES -->
+    <section class="page" id="config">
+      <div class="page-header">
+        <div><span class="eyebrow">Sua barbearia</span><h1>Configurações</h1></div>
+      </div>
+      <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <h3 style="margin-bottom: 10px;">Seu link de agendamento</h3>
+        <p style="color: var(--muted); font-size: 13px; margin: 0 0 12px;">Compartilhe esse link com seus clientes para eles agendarem sozinhos.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <input type="text" id="config-link" readonly style="flex: 1; min-width: 220px; font-family: var(--font-mono); font-size: 13px;" />
+          <button class="btn btn-primary" type="button" onclick="copiarLinkPublico()">Copiar link</button>
+        </div>
+      </div>
+
+      <form id="form-config" class="card" style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <img id="config-logo-preview" src="logo.png" alt="Foto da barbearia" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#fff;border:1px solid var(--border);flex-shrink:0;" />
+          <div style="flex:1;">
+            <label>Foto da barbearia</label>
+            <input type="file" id="config-logo-input" accept="image/*" />
+            <p id="config-logo-status" style="color:var(--muted);font-size:12px;margin:4px 0 0;"></p>
+          </div>
+        </div>
+        <div><label>Nome da barbearia</label><input type="text" id="config-nome" required /></div>
+        <div class="grid grid-2">
+          <div><label>Telefone</label><input type="text" id="config-telefone" placeholder="(21) 99999-0000" /></div>
+          <div><label>WhatsApp (com DDD)</label><input type="text" id="config-whatsapp" placeholder="21999990000" /></div>
+        </div>
+        <div><label>Endereço</label><input type="text" id="config-endereco" placeholder="Rua Exemplo, 123 - Bairro" /></div>
+        <div class="grid grid-2">
+          <div><label>Instagram (link)</label><input type="text" id="config-instagram" placeholder="https://instagram.com/suabarbearia" /></div>
+          <div><label>Facebook (link)</label><input type="text" id="config-facebook" placeholder="https://facebook.com/suabarbearia" /></div>
+        </div>
+        <div><label>Sobre a barbearia</label><textarea id="config-sobre" rows="3" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--cream);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:var(--font-body);"></textarea></div>
+
+        <h3 style="margin-top: 6px;">Horário de funcionamento</h3>
+        <div id="config-horarios" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+        <button class="btn btn-primary" type="submit" style="align-self: flex-start;">Salvar configurações</button>
+      </form>
+
+      <div class="card" style="margin-top: 16px; border-color: rgba(255,30,45,.4);">
+        <h3 style="margin-bottom: 6px;">Cancelar assinatura</h3>
+        <p style="color: var(--muted); font-size: 13px; margin: 0 0 12px;">Isso pausa seu acesso ao sistema imediatamente. Seus dados continuam salvos — se mudar de ideia, é só renovar o plano de novo.</p>
+        <button class="btn btn-danger" type="button" onclick="cancelarAssinatura()">Cancelar minha assinatura</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal-box"></div>
+</div>
+
+<div id="tela-pausado" style="display:none;position:fixed;inset:0;background:var(--bg,#0A0A0A);z-index:200;align-items:center;justify-content:center;padding:20px;">
+  <div class="card" style="max-width:420px;text-align:center;padding:32px;">
+    <h1 style="margin-bottom:10px;">Assinatura pausada</h1>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px;">Seu acesso ao Smart Agenda VIP está pausado no momento. Renove seu plano pra voltar a usar o sistema — seus dados continuam salvos.</p>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:12px;" onclick="abrirModalRenovarPlano()">Renovar plano</button>
+    <a href="https://wa.me/5521994564209" target="_blank" rel="noopener" class="btn btn-ghost" style="width:100%;text-decoration:none;display:block;box-sizing:border-box;margin-bottom:12px;">💬 Falar com o suporte</a>
+    <button class="btn btn-ghost" style="width:100%;" onclick="sb.auth.signOut().then(() => irPara('login.html'))">Sair</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+let UID = null;
+let dataAgendaAtual = new Date().toISOString().slice(0,10);
+let mesFinanceiroAtual = new Date().toISOString().slice(0,7);
+
+// TODO: trocar pelo Client ID real depois que a aplicação for criada em
+// https://www.mercadopago.com.br/developers/panel/app — o Client ID não é
+// segredo (fica visível no link), só o Client Secret é que fica só no servidor.
+const MP_CLIENT_ID = '5378222104646336';
+const MP_REDIRECT_URI = 'https://barberbook-smartlink.vercel.app/api/mp-callback';
+const LOGO_MP_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#fff"/><path d="M7 9.5c0-1.4 1.4-2.5 3.2-2.5h3.6c1.8 0 3.2 1.1 3.2 2.5 0 1.1-.8 2-2 2.4l2.4 4.6h-2.6l-2.1-4.2h-1.9v4.2H8.1V9.5H7zm2.8 3.1h3.6c.7 0 1.3-.5 1.3-1.1s-.6-1.1-1.3-1.1H9.8v2.2z" fill="#00B1EA"/></svg>';
+
+function conectarMercadoPago(barbeiroId) {
+  if (MP_CLIENT_ID === 'SEU_CLIENT_ID_MERCADO_PAGO_AQUI') {
+    alert('A integração com o Mercado Pago ainda não foi ativada pelo administrador do sistema.');
+    return;
+  }
+  const url = `https://auth.mercadopago.com.br/authorization?client_id=${encodeURIComponent(MP_CLIENT_ID)}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(MP_REDIRECT_URI)}&state=${encodeURIComponent(barbeiroId)}`;
+  location.href = url;
+}
+
+async function desconectarMercadoPago(barbeiroId) {
+  if (!confirm('Desconectar o Mercado Pago desse barbeiro? Ele precisa conectar de novo (com a conta certa) pra voltar a receber pagamentos automáticos.')) return;
+  await sb.from('barbeiros').update({
+    mp_conectado: false, mp_user_id: null, mp_access_token: null, mp_refresh_token: null, mp_token_expira_em: null
+  }).eq('id', barbeiroId);
+  renderBarbeiros();
+}
+
+function fmtMoeda(v) {
+  return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Reduz a imagem antes de subir pro storage. Foto tirada do celular vem com
+// 2-3 MB, mas na tela ela aparece num círculo de 36px (ou ~150px no maior
+// caso) — subir o arquivo original era desperdício puro: gerava vários MB de
+// tráfego por visitante na página pública de agendamento, o que estourou a
+// cota de egress do Supabase. WebP mantém transparência (importante pra logo)
+// e comprime muito melhor que PNG.
+async function comprimirImagem(arquivo, ladoMaximo = 400) {
+  try {
+    if (!arquivo.type.startsWith('image/')) return { arquivo, extensao: arquivo.name.split('.').pop() };
+
+    const bitmap = await createImageBitmap(arquivo);
+    const escala = Math.min(1, ladoMaximo / Math.max(bitmap.width, bitmap.height));
+    const largura = Math.round(bitmap.width * escala);
+    const altura = Math.round(bitmap.height * escala);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = largura;
+    canvas.height = altura;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, largura, altura);
+    bitmap.close();
+
+    const blob = await new Promise((ok) => canvas.toBlob(ok, 'image/webp', 0.85));
+    // se por algum motivo não comprimiu (navegador sem webp), sobe o original
+    if (!blob || blob.size >= arquivo.size) return { arquivo, extensao: arquivo.name.split('.').pop() };
+    return { arquivo: blob, extensao: 'webp' };
+  } catch (e) {
+    return { arquivo, extensao: arquivo.name.split('.').pop() };
+  }
+}
+// data_hora e outros campos de data/hora do sistema guardam os "dígitos do
+// relógio" já como horário local da barbearia (mesma convenção usada em
+// todo o app — a Agenda só faz .slice(11,16) pra mostrar a hora). Por isso
+// nunca usar `new Date().toISOString()` puro pra gravar um timestamp (isso
+// gravaria UTC de verdade e desalinharia 3h em relação ao resto do sistema).
+function agoraComoDigitosLocais() {
+  return new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+}
+function nomesServicosDe(a) {
+  if (a.agendamento_servicos && a.agendamento_servicos.length) {
+    return a.agendamento_servicos.map((x) => x.servicos ? x.servicos.nome : null).filter(Boolean).join(' + ');
+  }
+  return a.servicos ? a.servicos.nome : '—';
+}
+function fmtDataCurta(iso) {
+  const d = iso.slice(0,10).split('-');
+  return `${d[2]}/${d[1]}/${d[0]}`;
+}
+function badgeStatus(s) {
+  const map = { agendado: ['badge-muted','agendado'], concluido: ['badge-green','concluído'], cancelado: ['badge-red','cancelado'] };
+  const [cls, label] = map[s] || ['badge-muted', s];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+function abrirModal(html) {
+  document.getElementById('modal-box').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('aberto');
+}
+function fecharModal() {
+  document.getElementById('modal-overlay').classList.remove('aberto');
+  document.getElementById('modal-box').innerHTML = '';
+  if (typeof INTERVALO_STATUS_PAGAMENTO_OWNER !== 'undefined' && INTERVALO_STATUS_PAGAMENTO_OWNER) {
+    clearInterval(INTERVALO_STATUS_PAGAMENTO_OWNER);
+    INTERVALO_STATUS_PAGAMENTO_OWNER = null;
+  }
+}
+
+let PERFIL = null;
+let PLANO_UM_BARBEIRO = false; // true no Bronze (1 barbeiro só) — simplifica Produtos/Planos, sem separação por barbeiro
+
+async function carregarPerfil() {
+  const [{ data }, { data: assinatura }] = await Promise.all([
+    sb.from('perfis').select('id, nome_barbearia, telefone, endereco, logo_url, criado_em, slug, horarios, whatsapp, instagram, facebook, sobre, configurado').eq('id', UID).single(),
+    sb.rpc('minha_assinatura_plataforma').single()
+  ]);
+  PERFIL = data ? { ...data, ...(assinatura || {}) } : null;
+  document.getElementById('nome-barbearia').textContent = data ? data.nome_barbearia : 'Smart Agenda VIP';
+  document.getElementById('nome-barbearia-mobile').textContent = data ? data.nome_barbearia : 'Smart Agenda VIP';
+  document.getElementById('logo-barbearia').src = (data && data.logo_url) ? data.logo_url : 'logo.png';
+  document.getElementById('logo-barbearia-mobile').src = (data && data.logo_url) ? data.logo_url : 'logo.png';
+  await carregarTagPlanoPlataforma();
+}
+
+async function carregarTagPlanoPlataforma() {
+  const tagDesktop = document.getElementById('tag-plano-plataforma');
+  const tagMobile = document.getElementById('tag-plano-plataforma-mobile');
+  const vencDesktop = document.getElementById('tag-vencimento-plataforma');
+  const vencMobile = document.getElementById('tag-vencimento-plataforma-mobile');
+  if (!PERFIL || !PERFIL.plano_plataforma_id) {
+    tagDesktop.style.display = 'none';
+    tagMobile.style.display = 'none';
+    vencDesktop.style.display = 'none';
+    vencMobile.style.display = 'none';
+    PLANO_UM_BARBEIRO = false;
+    return;
+  }
+  const { data: plano } = await sb.from('planos_plataforma').select('nome, emoji, max_barbeiros').eq('id', PERFIL.plano_plataforma_id).single();
+  if (!plano) { tagDesktop.style.display = 'none'; tagMobile.style.display = 'none'; vencDesktop.style.display = 'none'; vencMobile.style.display = 'none'; PLANO_UM_BARBEIRO = false; return; }
+  PLANO_UM_BARBEIRO = plano.max_barbeiros === 1;
+  const conteudo = plano.emoji || plano.nome;
+  tagDesktop.textContent = conteudo;
+  tagDesktop.title = plano.nome;
+  tagDesktop.style.display = 'inline-block';
+  tagMobile.textContent = conteudo;
+  tagMobile.title = plano.nome;
+  tagMobile.style.display = 'inline-block';
+
+  if (PERFIL.assinatura_vencimento) {
+    const hoje = new Date(agoraComoDigitosLocais().slice(0, 10) + 'T00:00:00');
+    const vencimento = new Date(PERFIL.assinatura_vencimento + 'T00:00:00');
+    const dias = Math.round((vencimento - hoje) / (1000 * 60 * 60 * 24));
+    const texto = dias < 0 ? 'vencido' : dias === 0 ? 'vence hoje' : `${dias}d p/ renovar`;
+    const cor = dias <= 3 ? '#FF9A9C' : 'var(--muted)';
+    vencDesktop.textContent = texto;
+    vencDesktop.style.color = cor;
+    vencDesktop.style.display = 'inline-block';
+    vencMobile.textContent = texto;
+    vencMobile.style.color = cor;
+    vencMobile.style.display = 'inline-block';
+  } else {
+    vencDesktop.style.display = 'none';
+    vencMobile.style.display = 'none';
+  }
+}
+
+async function abrirModalRenovarPlano() {
+  const { data: planos } = await sb.from('planos_plataforma').select('id, nome, emoji, valor_mensal, min_barbeiros, max_barbeiros').order('ordem');
+  abrirModal(`
+    <h2>Renovar plano</h2>
+    <form id="form-renovar-plano">
+      <div>
+        <label>Escolha o plano</label>
+        <select name="plano_id" id="renovar-plano-select" required>
+          ${(planos || []).map((p) => `<option value="${p.id}" data-nome="${p.emoji || ''} ${p.nome}" data-valor="${Number(p.valor_mensal).toFixed(2).replace('.', ',')}">${p.emoji || ''} ${p.nome} — até ${p.max_barbeiros} profissional(is) — R$ ${Number(p.valor_mensal).toFixed(2).replace('.', ',')}/mês</option>`).join('')}
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Continuar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-renovar-plano').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const select = document.getElementById('renovar-plano-select');
+    const opcao = select.options[select.selectedIndex];
+    abrirModalPagarPlano(select.value, opcao.dataset.nome, opcao.dataset.valor);
+  });
+}
+
+function abrirModalPagarPlano(planoId, nome, valor) {
+  abrirModal(`
+    <h2>Forma de pagamento</h2>
+    <p style="color:var(--muted);margin-bottom:16px;">${nome} — R$ ${valor}/mês</p>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Você será redirecionado para o checkout seguro da InfinitePay, onde pode pagar com Pix ou cartão.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-pagar-plano" onclick="pagarPlanoRenovacao('${planoId}')">Ir para o pagamento</button>
+    </div>
+  `);
+}
+
+async function pagarPlanoRenovacao(planoId) {
+  if (!PERFIL || !PERFIL.telefone) {
+    alert('Cadastre um telefone em Configurações antes de renovar o plano.');
+    return;
+  }
+  const btn = document.getElementById('btn-pagar-plano');
+  btn.disabled = true;
+  btn.textContent = 'Gerando pagamento...';
+  try {
+    const r = await sb.rpc('registrar_pedido_plataforma', { p_telefone: PERFIL.telefone, p_plano_id: planoId, p_metodo: 'infinitepay' });
+    if (r.error || !r.data || !r.data.ok) {
+      alert('Não foi possível registrar o pedido. Tente novamente.');
+      btn.disabled = false; btn.textContent = 'Ir para o pagamento';
+      return;
+    }
+    const resp = await fetch('/api/infinitepay-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pedido_id: r.data.pedido_id, origem: 'painel' }) });
+    const dados = await resp.json();
+    if (!resp.ok || !dados.url) {
+      alert(dados.erro || 'Não foi possível gerar o pagamento. Tente novamente.');
+      btn.disabled = false; btn.textContent = 'Ir para o pagamento';
+      return;
+    }
+    location.href = dados.url;
+  } catch (e) {
+    alert('Erro de conexão ao gerar o pagamento. Tente novamente.');
+    btn.disabled = false; btn.textContent = 'Ir para o pagamento';
+  }
+}
+
+async function cancelarAssinatura() {
+  if (!confirm('Tem certeza que quer cancelar sua assinatura? Seu acesso ao sistema é pausado imediatamente. Seus dados continuam salvos e você pode renovar quando quiser.')) return;
+  const { error } = await sb.rpc('cancelar_minha_assinatura');
+  if (error) { alert('Não foi possível cancelar. Tente novamente.'); return; }
+  alert('Assinatura cancelada. Seu acesso foi pausado — quando quiser voltar, é só renovar o plano.');
+  await sb.auth.signOut();
+  irPara('login.html');
+}
+
+const DIAS = [
+  { chave: '0', nome: 'Domingo' }, { chave: '1', nome: 'Segunda' }, { chave: '2', nome: 'Terça' },
+  { chave: '3', nome: 'Quarta' }, { chave: '4', nome: 'Quinta' }, { chave: '5', nome: 'Sexta' }, { chave: '6', nome: 'Sábado' }
+];
+
+function renderConfig() {
+  document.getElementById('config-link').value = `https://smartlinkdigital.com.br/${PERFIL.slug}`;
+  document.getElementById('config-nome').value = PERFIL.nome_barbearia || '';
+  document.getElementById('config-logo-preview').src = PERFIL.logo_url || 'logo.png';
+  document.getElementById('config-logo-status').textContent = '';
+  document.getElementById('config-logo-input').value = '';
+  document.getElementById('config-telefone').value = PERFIL.telefone || '';
+  document.getElementById('config-whatsapp').value = PERFIL.whatsapp || '';
+  document.getElementById('config-endereco').value = PERFIL.endereco || '';
+  document.getElementById('config-instagram').value = PERFIL.instagram || '';
+  document.getElementById('config-facebook').value = PERFIL.facebook || '';
+  document.getElementById('config-sobre').value = PERFIL.sobre || '';
+
+  const horarios = PERFIL.horarios || {};
+  document.getElementById('config-horarios').innerHTML = DIAS.map((d) => {
+    const h = horarios[d.chave] || { aberto: false, inicio: '09:00', fim: '19:00' };
+    return `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <label style="display:flex;align-items:center;gap:6px;width:110px;margin:0;text-transform:none;color:var(--cream);font-size:14px;">
+          <input type="checkbox" data-dia="${d.chave}" class="chk-aberto" ${h.aberto ? 'checked' : ''} style="width:auto;" /> ${d.nome}
+        </label>
+        <input type="time" data-dia="${d.chave}" class="hr-inicio" value="${h.inicio || '09:00'}" ${h.aberto ? '' : 'disabled'} />
+        <span style="color:var(--muted);">até</span>
+        <input type="time" data-dia="${d.chave}" class="hr-fim" value="${h.fim || '19:00'}" ${h.aberto ? '' : 'disabled'} />
+      </div>`;
+  }).join('');
+
+  document.querySelectorAll('.chk-aberto').forEach((chk) => {
+    chk.addEventListener('change', () => {
+      const dia = chk.dataset.dia;
+      document.querySelector(`.hr-inicio[data-dia="${dia}"]`).disabled = !chk.checked;
+      document.querySelector(`.hr-fim[data-dia="${dia}"]`).disabled = !chk.checked;
+    });
+  });
+}
+
+document.getElementById('config-logo-input').addEventListener('change', (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+  document.getElementById('config-logo-preview').src = URL.createObjectURL(arquivo);
+  document.getElementById('config-logo-status').textContent = 'Nova foto selecionada — clique em Salvar para confirmar.';
+});
+
+function copiarLinkPublico() {
+  const input = document.getElementById('config-link');
+  input.select();
+  navigator.clipboard.writeText(input.value);
+  alert('Link copiado!');
+}
+
+document.getElementById('form-config').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const horarios = {};
+  DIAS.forEach((d) => {
+    const aberto = document.querySelector(`.chk-aberto[data-dia="${d.chave}"]`).checked;
+    horarios[d.chave] = {
+      aberto,
+      inicio: document.querySelector(`.hr-inicio[data-dia="${d.chave}"]`).value,
+      fim: document.querySelector(`.hr-fim[data-dia="${d.chave}"]`).value
+    };
+  });
+  const botaoSalvar = e.target.querySelector('button[type="submit"]');
+  botaoSalvar.disabled = true;
+  botaoSalvar.textContent = 'Salvando...';
+
+  const atualizacao = {
+    nome_barbearia: document.getElementById('config-nome').value,
+    telefone: document.getElementById('config-telefone').value || null,
+    whatsapp: document.getElementById('config-whatsapp').value || null,
+    endereco: document.getElementById('config-endereco').value || null,
+    instagram: document.getElementById('config-instagram').value || null,
+    facebook: document.getElementById('config-facebook').value || null,
+    sobre: document.getElementById('config-sobre').value || null,
+    horarios,
+    configurado: true
+  };
+
+  const arquivoLogoOriginal = document.getElementById('config-logo-input').files[0];
+  if (arquivoLogoOriginal) {
+    const { arquivo: arquivoLogo, extensao } = await comprimirImagem(arquivoLogoOriginal);
+    const caminho = `${UID}/logo.${extensao}`;
+    const { error: erroUpload } = await sb.storage.from('logos').upload(caminho, arquivoLogo, { upsert: true, contentType: arquivoLogo.type });
+    if (erroUpload) {
+      alert('Não foi possível enviar a foto. Tente novamente.');
+      botaoSalvar.disabled = false;
+      botaoSalvar.textContent = 'Salvar configurações';
+      return;
+    }
+    const { data: urlData } = sb.storage.from('logos').getPublicUrl(caminho);
+    atualizacao.logo_url = urlData.publicUrl + '?v=' + Date.now();
+  }
+  await sb.from('perfis').update(atualizacao).eq('id', UID);
+  Object.assign(PERFIL, atualizacao);
+  document.getElementById('nome-barbearia').textContent = PERFIL.nome_barbearia;
+  document.getElementById('nome-barbearia-mobile').textContent = PERFIL.nome_barbearia;
+  document.getElementById('logo-barbearia').src = PERFIL.logo_url || 'logo.png';
+  document.getElementById('logo-barbearia-mobile').src = PERFIL.logo_url || 'logo.png';
+  botaoSalvar.disabled = false;
+  botaoSalvar.textContent = 'Salvar configurações';
+  alert('Configurações salvas!');
+});
+
+function mostrarPagina(id) {
+  document.querySelectorAll('.nav-item').forEach((i) => i.classList.toggle('active', i.dataset.page === id));
+  document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === id));
+  if (id === 'painel') renderPainel();
+  else if (id === 'agenda') renderAgenda();
+  else if (id === 'clientes') renderClientes();
+  else if (id === 'servicos') renderServicos();
+  else if (id === 'produtos') renderProdutos();
+  else if (id === 'planos') renderPlanos();
+  else if (id === 'barbeiros') renderBarbeiros();
+  else if (id === 'financeiro') renderFinanceiro();
+  else if (id === 'config') renderConfig();
+}
+document.querySelectorAll('.nav-item').forEach((item) => {
+  item.addEventListener('click', () => { mostrarPagina(item.dataset.page); fecharMenuMobile(); });
+});
+
+// Tempo real — quando outro barbeiro/dono muda algo no banco (em outra aba,
+// outro celular etc), a tela re-renderiza sozinha se a página afetada
+// estiver aberta no momento, sem precisar apertar F5.
+function paginaEstaAberta(id) {
+  const el = document.getElementById(id);
+  return el && el.classList.contains('active');
+}
+function iniciarTempoReal() {
+  const mapaTabelaPagina = {
+    agendamentos: ['painel', 'agenda'],
+    cobrancas: ['agenda', 'produtos', 'financeiro'],
+    produtos: ['produtos'],
+    pedidos: ['produtos'],
+    clientes: ['clientes'],
+    barbeiros: ['barbeiros', 'produtos', 'planos'],
+    planos: ['planos'],
+    assinaturas: ['clientes'],
+    despesas: ['financeiro'],
+    servicos: ['servicos'],
+    lojas: ['produtos']
+  };
+  const mapaPaginaRender = {
+    painel: renderPainel, agenda: renderAgenda, clientes: renderClientes,
+    servicos: renderServicos, produtos: renderProdutos, planos: renderPlanos,
+    barbeiros: renderBarbeiros, financeiro: renderFinanceiro
+  };
+  const canal = sb.channel('barber-book-mudancas');
+  Object.keys(mapaTabelaPagina).forEach((tabela) => {
+    canal.on('postgres_changes', { event: '*', schema: 'public', table: tabela, filter: `owner_id=eq.${UID}` }, () => {
+      mapaTabelaPagina[tabela].forEach((pagina) => {
+        if (paginaEstaAberta(pagina) && mapaPaginaRender[pagina]) mapaPaginaRender[pagina]();
+      });
+    });
+  });
+  canal.subscribe();
+}
+
+function abrirMenuMobile() {
+  document.getElementById('sidebar').classList.add('aberta');
+  document.getElementById('fundo-menu-mobile').classList.add('aberta');
+}
+function fecharMenuMobile() {
+  document.getElementById('sidebar').classList.remove('aberta');
+  document.getElementById('fundo-menu-mobile').classList.remove('aberta');
+}
+document.getElementById('btn-abrir-menu').addEventListener('click', abrirMenuMobile);
+document.getElementById('fundo-menu-mobile').addEventListener('click', fecharMenuMobile);
+
+/* ---------- PAINEL ---------- */
+const CONDICAO_CLIMA = {
+  0: ['☀️', 'Céu limpo'], 1: ['🌤️', 'Poucas nuvens'], 2: ['⛅', 'Parcialmente nublado'], 3: ['☁️', 'Nublado'],
+  45: ['🌫️', 'Neblina'], 48: ['🌫️', 'Neblina'],
+  51: ['🌦️', 'Garoa'], 53: ['🌦️', 'Garoa'], 55: ['🌦️', 'Garoa'],
+  61: ['🌧️', 'Chuva fraca'], 63: ['🌧️', 'Chuva'], 65: ['🌧️', 'Chuva forte'],
+  71: ['❄️', 'Neve'], 73: ['❄️', 'Neve'], 75: ['❄️', 'Neve'],
+  80: ['🌦️', 'Pancadas de chuva'], 81: ['🌦️', 'Pancadas de chuva'], 82: ['🌦️', 'Pancadas fortes'],
+  95: ['⛈️', 'Tempestade'], 96: ['⛈️', 'Tempestade'], 99: ['⛈️', 'Tempestade']
+};
+function desenharRelogioClima(clima) {
+  const agora = new Date();
+  const diaSemana = agora.toLocaleDateString('pt-BR', { weekday: 'long' });
+  const dataFormatada = agora.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
+  const hora = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const el = document.getElementById('painel-clima');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="font-size:13px;color:var(--muted);text-transform:capitalize;">${diaSemana}, ${dataFormatada}</div>
+    <div style="font-family:var(--font-mono);color:var(--cream);font-size:22px;font-weight:600;">${hora}</div>
+    ${clima ? `
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:2px;">
+        <span style="font-size:18px;">${clima.icone}</span>
+        <span style="font-family:var(--font-mono);color:var(--brass-soft);font-weight:600;">${clima.temperatura}°</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">${clima.descricao} · ${clima.chuva}% de chuva hoje</div>
+    ` : ''}
+  `;
+}
+let CLIMA_ATUAL = null;
+async function buscarClima(lat, lon) {
+  try {
+    const resp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=precipitation_probability_max&timezone=auto`);
+    const dados = await resp.json();
+    const codigo = dados.current ? dados.current.weather_code : 0;
+    const [icone, descricao] = CONDICAO_CLIMA[codigo] || ['☀️', 'Tempo estável'];
+    CLIMA_ATUAL = {
+      temperatura: Math.round(dados.current.temperature_2m),
+      icone,
+      descricao,
+      chuva: dados.daily && dados.daily.precipitation_probability_max ? dados.daily.precipitation_probability_max[0] : 0
+    };
+  } catch (e) {
+    CLIMA_ATUAL = null;
+  }
+  desenharRelogioClima(CLIMA_ATUAL);
+}
+function iniciarClimaRelogio() {
+  desenharRelogioClima(null);
+  setInterval(() => desenharRelogioClima(CLIMA_ATUAL), 30000);
+  const coordsPadrao = { lat: -22.9068, lon: -43.1729 }; // Rio de Janeiro, usado se a localização não estiver disponível
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => buscarClima(pos.coords.latitude, pos.coords.longitude),
+      () => buscarClima(coordsPadrao.lat, coordsPadrao.lon),
+      { timeout: 5000 }
+    );
+  } else {
+    buscarClima(coordsPadrao.lat, coordsPadrao.lon);
+  }
+}
+
+async function renderOnboarding(barbeirosAtivos) {
+  const container = document.getElementById('onboarding-checklist');
+  if (localStorage.getItem('onboarding_dispensado') === '1') { container.style.display = 'none'; return; }
+
+  const { count: servicosCount } = await sb.from('servicos').select('id', { count: 'exact', head: true }).eq('owner_id', UID);
+  const passos = [
+    { ok: !!(PERFIL && PERFIL.configurado), texto: 'Configurar o perfil da barbearia', pagina: 'config' },
+    { ok: barbeirosAtivos.length > 0, texto: 'Cadastrar pelo menos 1 barbeiro', pagina: 'barbeiros' },
+    { ok: (servicosCount || 0) > 0, texto: 'Cadastrar pelo menos 1 serviço', pagina: 'servicos' },
+    { ok: barbeirosAtivos.length > 0 && (servicosCount || 0) > 0, texto: 'Compartilhar o link de agendamento com clientes', pagina: 'config' }
+  ];
+
+  if (passos.every((p) => p.ok)) { container.style.display = 'none'; return; }
+
+  container.style.display = 'block';
+  container.innerHTML = `
+    <div class="card" style="margin-bottom: 24px; border-color: var(--brass);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3>Primeiros passos</h3>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;" onclick="dispensarOnboarding()">Dispensar</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${passos.map((p) => `
+          <div style="display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="mostrarPagina('${p.pagina}')">
+            <span style="width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;background:${p.ok ? 'var(--brass)' : 'var(--surface-2)'};color:${p.ok ? '#1a1a1a' : 'var(--muted)'};border:1px solid ${p.ok ? 'var(--brass)' : 'var(--border)'};">${p.ok ? '✓' : ''}</span>
+            <span style="color:${p.ok ? 'var(--muted)' : 'var(--cream)'};text-decoration:${p.ok ? 'line-through' : 'none'};font-size:14px;">${p.texto}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+function dispensarOnboarding() {
+  localStorage.setItem('onboarding_dispensado', '1');
+  document.getElementById('onboarding-checklist').style.display = 'none';
+}
+
+async function renderPainel() {
+  const hojeISO = agoraComoDigitosLocais().slice(0,10);
+  const [{ data: agHoje }, { data: concluidosHojeData }, { data: despHoje }, { data: barbeirosAtivos }] = await Promise.all([
+    sb.from('agendamentos')
+      .select('*, clientes(nome), servicos!agendamentos_servico_id_fkey(nome), agendamento_servicos(servicos(nome))')
+      .gte('data_hora', hojeISO + 'T00:00:00').lte('data_hora', hojeISO + 'T23:59:59')
+      .order('data_hora', { ascending: true }),
+    sb.from('agendamentos')
+      .select('valor, barbeiro_id')
+      .gte('concluido_em', hojeISO + 'T00:00:00').lte('concluido_em', hojeISO + 'T23:59:59'),
+    sb.from('despesas').select('valor').eq('data', hojeISO),
+    sb.from('barbeiros').select('id, nome, foto_url').eq('owner_id', UID).eq('ativo', true).order('nome')
+  ]);
+  const lista = agHoje || [];
+  // "concluído hoje" agora é definido por quando foi marcado como feito E
+  // pago (concluido_em), não pela data que estava agendado — assim um corte
+  // agendado pra outro dia mas fechado hoje ainda entra no caixa de hoje.
+  const concluidosHoje = concluidosHojeData || [];
+  const faturadoHoje = concluidosHoje.reduce((s,a) => s + Number(a.valor||0), 0);
+  const saidasHoje = (despHoje||[]).reduce((s,d) => s + Number(d.valor||0), 0);
+
+  document.getElementById('p-agendamentos-hoje').textContent = lista.length;
+  document.getElementById('p-concluidos-hoje').textContent = concluidosHoje.length;
+  document.getElementById('p-faturado-hoje').textContent = fmtMoeda(faturadoHoje);
+  document.getElementById('p-saldo-hoje').textContent = fmtMoeda(faturadoHoje - saidasHoje);
+  renderOnboarding(barbeirosAtivos || []);
+
+  const listaBarbeiros = barbeirosAtivos || [];
+  document.getElementById('p-por-barbeiro').innerHTML = listaBarbeiros.length ? listaBarbeiros.map((b) => {
+    const doBarbeiro = lista.filter((a) => a.barbeiro_id === b.id);
+    const faturadoBarbeiro = concluidosHoje.filter((a) => a.barbeiro_id === b.id).reduce((s,a) => s + Number(a.valor||0), 0);
+    return `
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          ${b.foto_url
+            ? `<img src="${b.foto_url}" alt="${b.nome}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />`
+            : `<div style="width:32px;height:32px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);color:var(--brass-soft);font-size:13px;flex-shrink:0;">${b.nome.slice(0,1)}</div>`}
+          <h3 style="flex:1;">${b.nome}</h3>
+          <span style="font-family:var(--font-mono);color:var(--brass-soft);font-weight:600;font-size:15px;">${fmtMoeda(faturadoBarbeiro)}</span>
+        </div>
+        <table><tbody>
+          ${doBarbeiro.length ? doBarbeiro.map((a) => `
+            <tr>
+              <td style="font-family:var(--font-mono);color:var(--brass-soft);">${a.data_hora.slice(11,16)}</td>
+              <td>${a.clientes ? a.clientes.nome : '—'}</td>
+              <td style="color:var(--muted);">${nomesServicosDe(a)}</td>
+              <td>${badgeStatus(a.status)}</td>
+            </tr>`).join('') : `<tr><td colspan="4" style="color:var(--muted);text-align:center;">Nenhum agendamento hoje</td></tr>`}
+        </tbody></table>
+      </div>`;
+  }).join('') : '<p style="color:var(--muted);">Nenhum barbeiro cadastrado.</p>';
+}
+
+function alternarLinha(botao) {
+  const tr = botao.closest('tr');
+  const expandida = tr.classList.toggle('linha-expandida');
+  botao.innerHTML = expandida ? 'Ocultar ▴' : 'Ver detalhes ▾';
+}
+
+/* ---------- AGENDA ---------- */
+function normalizarTexto(s) {
+  return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+let AGENDA_CACHE = [];
+const NOME_METODO_PAGAMENTO = { pix: 'Pix', cartao: 'Cartão', dinheiro: 'Dinheiro' };
+function formaPagamentoDe(a) {
+  if (!a.pago) return '—';
+  const cobrancasPagas = (a.cobrancas || []).filter((c) => c.status === 'pago');
+  const cobranca = cobrancasPagas[0] || (a.cobrancas || [])[0];
+  if (cobranca && cobranca.metodo) return NOME_METODO_PAGAMENTO[cobranca.metodo] || cobranca.metodo;
+  return 'Dinheiro';
+}
+
+async function renderAgenda() {
+  document.getElementById('input-data-agenda').value = dataAgendaAtual;
+  const { data } = await sb.from('agendamentos')
+    .select('*, clientes(nome, telefone), servicos!agendamentos_servico_id_fkey(nome), barbeiros(nome, mp_conectado), agendamento_servicos(servicos(nome)), cobrancas(metodo, status)')
+    .gte('data_hora', dataAgendaAtual + 'T00:00:00')
+    .order('data_hora', { ascending: true });
+  AGENDA_CACHE = data || [];
+  document.getElementById('busca-agenda').value = '';
+  desenharAgenda(AGENDA_CACHE);
+}
+function filtrarAgenda() {
+  const termo = normalizarTexto(document.getElementById('busca-agenda').value);
+  const filtrada = termo ? AGENDA_CACHE.filter((a) => normalizarTexto(a.clientes ? a.clientes.nome : '').includes(termo)) : AGENDA_CACHE;
+  desenharAgenda(filtrada);
+}
+function desenharAgenda(lista) {
+  document.getElementById('corpo-agenda').innerHTML = lista.length ? lista.map((a) => `
+    <tr>
+      <td data-label="Data / Hora" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtDataCurta(a.data_hora)} ${a.data_hora.slice(11,16)}</td>
+      <td data-label="Cliente">${a.clientes ? a.clientes.nome : '—'}</td>
+      <td data-label="Serviço" class="detalhe" style="color:var(--muted);">${nomesServicosDe(a)}</td>
+      <td data-label="Barbeiro" class="detalhe" style="color:var(--muted);">${a.barbeiros ? a.barbeiros.nome : '—'}</td>
+      <td data-label="Status" class="detalhe">
+        <select onchange="mudarStatusAgendamento('${a.id}', this.value)" style="padding:4px 8px;font-size:12px;">
+          <option value="agendado" ${a.status==='agendado'?'selected':''}>agendado</option>
+          <option value="concluido" ${a.status==='concluido'?'selected':''}>concluído</option>
+          <option value="cancelado" ${a.status==='cancelado'?'selected':''}>cancelado</option>
+        </select>
+      </td>
+      <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);font-weight:600;">${fmtMoeda(a.valor)}</td>
+      <td data-label="Pagamento" class="detalhe" style="color:var(--muted);">${formaPagamentoDe(a)}</td>
+      <td class="detalhe" style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${a.pago
+          ? `<span style="font-size:12px;color:#7FE0A7;font-weight:600;">✓ Pago</span>`
+          : `
+            ${a.barbeiros && a.barbeiros.mp_conectado ? `<button class="btn-mp" onclick="abrirModalCobrar('${a.id}')">${LOGO_MP_SVG} Cobrar</button>` : ''}
+            <button class="btn btn-ghost" onclick="marcarComoPago('${a.id}')">✓ Marcar pago</button>
+          `}
+        <button class="btn btn-danger" onclick="removerAgendamento('${a.id}')">Remover</button>
+      </td>
+      <td class="col-seta"><button type="button" class="btn-seta" onclick="alternarLinha(this)">Ver detalhes ▾</button></td>
+    </tr>`).join('') : `<tr><td colspan="9" style="color:var(--muted);text-align:center;">Nenhum agendamento encontrado</td></tr>`;
+}
+
+async function marcarComoPago(agendamentoId) {
+  if (!confirm('Marcar esse agendamento como pago?')) return;
+  const atual = AGENDA_CACHE.find((x) => x.id === agendamentoId);
+  const atualizacao = { pago: true };
+  if (atual && atual.status === 'concluido') atualizacao.concluido_em = agoraComoDigitosLocais();
+  await sb.from('agendamentos').update(atualizacao).eq('id', agendamentoId);
+  renderAgenda();
+}
+
+function abrirModalCobrar(agendamentoId) {
+  const a = AGENDA_CACHE.find((x) => x.id === agendamentoId);
+  if (!a) return;
+  abrirModal(`
+    <h2>Cobrar cliente</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">${a.clientes ? a.clientes.nome : 'Cliente'} · ${fmtMoeda(a.valor)}</p>
+    <div id="area-pagamento-owner">${formasPagamentoOwnerHtml(agendamentoId)}</div>
+    <div class="modal-actions"><button type="button" class="btn" style="width:100%;" onclick="fecharModal()">Fechar</button></div>
+  `);
+}
+
+function formasPagamentoOwnerHtml(agendamentoId) {
+  return `
+    <div class="formas-pagamento">
+      <button type="button" class="forma-pagamento" onclick="escolherCobrancaOwner('${agendamentoId}', 'cartao', this)">
+        <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span>
+        <span>Cartão</span>
+      </button>
+      <button type="button" class="forma-pagamento" onclick="escolherCobrancaOwner('${agendamentoId}', 'dinheiro', this)">
+        <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span>
+        <span>Dinheiro</span>
+      </button>
+      <button type="button" class="forma-pagamento" onclick="escolherCobrancaOwner('${agendamentoId}', 'pix', this)">
+        <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
+        <span>Pix</span>
+      </button>
+    </div>
+  `;
+}
+
+function linkWhatsApp(telefone, mensagem) {
+  const numero = (telefone || '').replace(/\D/g, '');
+  return `https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`;
+}
+
+async function escolherCobrancaOwner(agendamentoId, metodo, botao) {
+  const a = AGENDA_CACHE.find((x) => x.id === agendamentoId);
+  const area = document.getElementById('area-pagamento-owner');
+  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agendamento_id: agendamentoId, metodo })
+    });
+    const dados = await resp.json();
+    if (!resp.ok) {
+      alert(dados.erro || 'Não foi possível gerar a cobrança.');
+      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+      return;
+    }
+
+    const telefone = a && a.clientes ? a.clientes.telefone : null;
+    const nomeCliente = a && a.clientes ? a.clientes.nome : 'Cliente';
+
+    if (metodo === 'dinheiro') {
+      area.innerHTML = `
+        <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:10px;">✅ Combinado! Marque como pago quando receber.</p>
+        <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamentoOwner('${agendamentoId}')">← Trocar forma de pagamento</button>
+      `;
+      renderAgenda();
+      return;
+    }
+
+    if (metodo === 'cartao') {
+      const mensagem = `Olá, ${nomeCliente}! Segue o link para pagamento do seu agendamento (${fmtMoeda(a.valor)}): ${dados.link_pagamento}`;
+      area.innerHTML = `
+        <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;font-size:12px;word-break:break-all;color:var(--muted);">${dados.link_pagamento}</div>
+        ${telefone ? `<a class="btn-whatsapp" href="${linkWhatsApp(telefone, mensagem)}" target="_blank">💬 Enviar no WhatsApp</a>` : `<p style="font-size:12px;color:var(--muted);text-align:center;">Cliente sem WhatsApp cadastrado.</p>`}
+        <button type="button" class="btn" style="width:100%;margin-top:10px;" onclick="voltarFormasPagamentoOwner('${agendamentoId}')">← Trocar forma de pagamento</button>
+      `;
+      return;
+    }
+
+    // pix
+    const mensagem = `Olá, ${nomeCliente}! Segue o código Pix (copia e cola) para pagamento do seu agendamento (${fmtMoeda(a.valor)}):\n\n${dados.qr_code}`;
+    area.innerHTML = `
+      <div style="background:#fff;border-radius:var(--radius-sm);padding:14px;display:flex;justify-content:center;margin-bottom:12px;">
+        <img src="data:image/png;base64,${dados.qr_code_base64}" alt="QR code Pix" style="width:180px;height:180px;" />
+      </div>
+      ${telefone ? `<a class="btn-whatsapp" href="${linkWhatsApp(telefone, mensagem)}" target="_blank">💬 Enviar no WhatsApp</a>` : `<p style="font-size:12px;color:var(--muted);text-align:center;">Cliente sem WhatsApp cadastrado.</p>`}
+      <p id="status-pagamento-owner" style="font-size:13px;color:var(--muted);text-align:center;margin:10px 0;">⏳ Aguardando pagamento...</p>
+      <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamentoOwner('${agendamentoId}')">← Trocar forma de pagamento</button>
+    `;
+
+    if (INTERVALO_STATUS_PAGAMENTO_OWNER) clearInterval(INTERVALO_STATUS_PAGAMENTO_OWNER);
+    INTERVALO_STATUS_PAGAMENTO_OWNER = setInterval(() => verificarStatusPagamentoOwner(agendamentoId), 4000);
+  } catch (e) {
+    alert('Erro ao gerar a cobrança. Tente novamente.');
+    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+  }
+}
+
+let INTERVALO_STATUS_PAGAMENTO_OWNER = null;
+
+async function verificarStatusPagamentoOwner(agendamentoId) {
+  // Mesma checagem ativa usada na página pública — não depende só do aviso
+  // automático do Mercado Pago, que não cobre esse tipo de pagamento (Pix
+  // via Orders) igual foi descoberto testando de verdade.
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-verificar-pagamento`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agendamento_id: agendamentoId })
+    });
+    const dados = await resp.json();
+    if (dados.status === 'pago') {
+      clearInterval(INTERVALO_STATUS_PAGAMENTO_OWNER);
+      const statusEl = document.getElementById('status-pagamento-owner');
+      if (statusEl) statusEl.innerHTML = '✅ <strong style="color:#7FE0A7;">Pagamento confirmado!</strong>';
+      renderAgenda();
+    }
+  } catch (e) {}
+}
+
+function voltarFormasPagamentoOwner(agendamentoId) {
+  if (INTERVALO_STATUS_PAGAMENTO_OWNER) {
+    clearInterval(INTERVALO_STATUS_PAGAMENTO_OWNER);
+    INTERVALO_STATUS_PAGAMENTO_OWNER = null;
+  }
+  document.getElementById('area-pagamento-owner').innerHTML = formasPagamentoOwnerHtml(agendamentoId);
+}
+document.getElementById('input-data-agenda').addEventListener('change', (e) => {
+  dataAgendaAtual = e.target.value;
+  renderAgenda();
+});
+async function mudarStatusAgendamento(id, status) {
+  const atual = AGENDA_CACHE.find((x) => x.id === id);
+  const atualizacao = { status };
+  if (status === 'concluido' && atual && atual.pago) atualizacao.concluido_em = agoraComoDigitosLocais();
+  else if (status !== 'concluido') atualizacao.concluido_em = null;
+  await sb.from('agendamentos').update(atualizacao).eq('id', id);
+  renderAgenda();
+}
+async function removerAgendamento(id) {
+  if (!confirm('Remover este agendamento?')) return;
+  await sb.from('agendamentos').delete().eq('id', id);
+  renderAgenda();
+}
+async function abrirModalNovoAgendamento() {
+  const [{ data: clientes }, { data: servicos }, { data: barbeiros }] = await Promise.all([
+    sb.from('clientes').select('id,nome').order('nome'),
+    sb.from('servicos').select('id,nome,preco,duracao_min').eq('ativo', true).order('nome'),
+    sb.from('barbeiros').select('id,nome').eq('ativo', true).order('nome')
+  ]);
+  if (!clientes?.length || !servicos?.length || !barbeiros?.length) {
+    alert('Cadastre ao menos um cliente, um serviço e um barbeiro antes de criar um agendamento.');
+    return;
+  }
+  abrirModal(`
+    <h2>Novo agendamento</h2>
+    <form id="form-modal">
+      <div><label>Data</label><input type="date" name="data" value="${dataAgendaAtual}" required /></div>
+      <div><label>Hora</label><input type="time" name="hora" required /></div>
+      <div><label>Cliente</label><select name="cliente_id" required>${clientes.map((c) => `<option value="${c.id}">${c.nome}</option>`).join('')}</select></div>
+      <div><label>Serviço</label><select name="servico_id" required>${servicos.map((s) => `<option value="${s.id}" data-preco="${s.preco}" data-duracao="${s.duracao_min}">${s.nome} — ${fmtMoeda(s.preco)}</option>`).join('')}</select></div>
+      <div><label>Barbeiro</label><select name="barbeiro_id" required>${barbeiros.map((b) => `<option value="${b.id}">${b.nome}</option>`).join('')}</select></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const servicoId = f.get('servico_id');
+    const opcaoServico = e.target.querySelector('[name="servico_id"]').selectedOptions[0];
+    const preco = opcaoServico.dataset.preco;
+    const duracao = opcaoServico.dataset.duracao;
+    const agendamentoId = crypto.randomUUID();
+    const { error } = await sb.from('agendamentos').insert({
+      id: agendamentoId,
+      owner_id: UID,
+      cliente_id: f.get('cliente_id'),
+      servico_id: servicoId,
+      barbeiro_id: f.get('barbeiro_id'),
+      data_hora: `${f.get('data')}T${f.get('hora')}:00`,
+      duracao_min: duracao,
+      valor: preco,
+      status: 'agendado'
+    });
+    if (error) { alert('Esse barbeiro já tem um agendamento nesse horário.'); return; }
+    await sb.from('agendamento_servicos').insert({ agendamento_id: agendamentoId, servico_id: servicoId, preco });
+    fecharModal();
+    dataAgendaAtual = f.get('data');
+    renderAgenda();
+  });
+}
+
+/* ---------- CLIENTES ---------- */
+let CLIENTES_CACHE = [];
+let CLIENTES_MAPA = {};
+let ASSINATURAS_MAPA = {};
+async function renderClientes() {
+  const { data: clientes } = await sb.from('clientes').select('*').order('nome');
+  const { data: concluidos } = await sb.from('agendamentos').select('cliente_id, data_hora').eq('status', 'concluido');
+  const { data: assinaturas } = await sb.from('assinaturas').select('cliente_id, usos_no_ciclo, ciclo_inicio, planos(nome, limite_mensal, servicos_inclusos)').eq('status', 'ativo');
+  CLIENTES_MAPA = {};
+  (concluidos||[]).forEach((a) => {
+    if (!a.cliente_id) return;
+    if (!CLIENTES_MAPA[a.cliente_id]) CLIENTES_MAPA[a.cliente_id] = { count: 0, ultima: null };
+    CLIENTES_MAPA[a.cliente_id].count += 1;
+    if (!CLIENTES_MAPA[a.cliente_id].ultima || a.data_hora > CLIENTES_MAPA[a.cliente_id].ultima) CLIENTES_MAPA[a.cliente_id].ultima = a.data_hora;
+  });
+  ASSINATURAS_MAPA = {};
+  (assinaturas||[]).forEach((a) => { ASSINATURAS_MAPA[a.cliente_id] = a; });
+  CLIENTES_CACHE = clientes || [];
+  document.getElementById('busca-clientes').value = '';
+  desenharClientes(CLIENTES_CACHE);
+}
+function filtrarClientes() {
+  const termo = normalizarTexto(document.getElementById('busca-clientes').value);
+  const filtrada = termo ? CLIENTES_CACHE.filter((c) => normalizarTexto(c.nome).includes(termo)) : CLIENTES_CACHE;
+  desenharClientes(filtrada);
+}
+function desenharClientes(lista) {
+  document.getElementById('corpo-clientes').innerHTML = lista.length ? lista.map((c) => {
+    const info = CLIENTES_MAPA[c.id] || { count: 0, ultima: null };
+    const assinatura = ASSINATURAS_MAPA[c.id];
+    const planoTag = assinatura
+      ? `<span class="badge badge-brass">${assinatura.planos.nome}${assinatura.planos.limite_mensal ? ` (${assinatura.usos_no_ciclo}/${assinatura.planos.limite_mensal})` : ' (ilimitado)'}</span>`
+      : '—';
+    return `<tr>
+      <td data-label="Nome"><a href="#" style="color:var(--cream);font-weight:600;" onclick="event.preventDefault();abrirModalClientePlano('${c.id}')">${c.nome}</a></td>
+      <td data-label="Telefone" class="detalhe" style="color:var(--muted);">${c.telefone || '—'}</td>
+      <td data-label="Última visita" class="detalhe" style="color:var(--muted);">${info.ultima ? fmtDataCurta(info.ultima) : '—'}</td>
+      <td data-label="Histórico" class="detalhe"><span class="badge badge-brass">${info.count} corte(s)</span></td>
+      <td data-label="Plano" class="detalhe">${planoTag}</td>
+      <td class="detalhe"><button class="btn btn-danger" onclick="removerCliente('${c.id}')">Remover</button></td>
+      <td class="col-seta"><button type="button" class="btn-seta" onclick="alternarLinha(this)">Ver detalhes ▾</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" style="color:var(--muted);text-align:center;">Nenhum cliente encontrado</td></tr>`;
+}
+function abrirModalClientePlano(clienteId) {
+  const cliente = CLIENTES_CACHE.find((c) => c.id === clienteId);
+  const assinatura = ASSINATURAS_MAPA[clienteId];
+  if (!cliente) return;
+
+  if (!assinatura) {
+    abrirModal(`
+      <h2>${cliente.nome}</h2>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px;">Esse cliente não tem nenhum plano ativo no momento.</p>
+      <div class="modal-actions"><button type="button" class="btn btn-primary" onclick="fecharModal()">Fechar</button></div>
+    `);
+    return;
+  }
+
+  const plano = assinatura.planos;
+  const limiteTxt = plano.limite_mensal ? `${assinatura.usos_no_ciclo} de ${plano.limite_mensal} usados esse mês` : `${assinatura.usos_no_ciclo} usados esse mês (ilimitado)`;
+  const restantesTxt = plano.limite_mensal ? `${Math.max(0, plano.limite_mensal - assinatura.usos_no_ciclo)} restante(s)` : 'sem limite';
+
+  abrirModal(`
+    <h2>${cliente.nome}</h2>
+    <span class="badge badge-brass" style="margin-top:8px;display:inline-block;">${plano.nome}</span>
+    <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin:14px 0;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:var(--muted);">Uso no mês</span><strong>${limiteTxt}</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Restante</span><strong style="color:var(--brass-soft);">${restantesTxt}</strong></div>
+      <div style="color:var(--muted);font-size:12px;margin-top:6px;">Ciclo iniciado em ${fmtDataCurta(assinatura.ciclo_inicio)}</div>
+    </div>
+    <p style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Serviços inclusos</p>
+    <div>${(plano.servicos_inclusos||[]).map((s) => `<span class="badge badge-muted" style="margin:2px 4px 2px 0;">${s}</span>`).join('') || '<span style="color:var(--muted);font-size:13px;">Nenhum serviço específico definido</span>'}</div>
+    <div class="modal-actions"><button type="button" class="btn btn-primary" onclick="fecharModal()">Fechar</button></div>
+  `);
+}
+
+async function removerCliente(id) {
+  if (!confirm('Remover este cliente?')) return;
+  await sb.from('clientes').delete().eq('id', id);
+  renderClientes();
+}
+function abrirModalNovoCliente() {
+  abrirModal(`
+    <h2>Novo cliente</h2>
+    <form id="form-modal">
+      <div><label>Nome</label><input type="text" name="nome" required /></div>
+      <div><label>Telefone</label><input type="text" name="telefone" placeholder="(21) 99999-0000" /></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await sb.from('clientes').insert({ owner_id: UID, nome: f.get('nome'), telefone: f.get('telefone') || null });
+    fecharModal();
+    renderClientes();
+  });
+}
+
+/* ---------- SERVIÇOS ---------- */
+let SERVICOS_CACHE = [];
+async function renderServicos() {
+  const { data } = await sb.from('servicos').select('*').order('nome');
+  const lista = data || [];
+  SERVICOS_CACHE = lista;
+  document.getElementById('grid-servicos').innerHTML = lista.length ? lista.map((s) => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <h3 style="color:var(--cream);font-size:16px;">${s.nome}</h3>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" onclick="abrirModalEditarServico('${s.id}')">Editar</button>
+          <button class="btn btn-danger" onclick="removerServico('${s.id}')">Remover</button>
+        </div>
+      </div>
+      <p style="color:var(--muted);font-size:13px;margin:8px 0;">${s.duracao_min} min</p>
+      <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:20px;">${fmtMoeda(s.preco)}</span>
+    </div>`).join('') : `<div class="empty-state"><h3>Nenhum serviço cadastrado</h3><p>Adicione o primeiro serviço do catálogo.</p></div>`;
+}
+async function removerServico(id) {
+  if (!confirm('Remover este serviço?')) return;
+  await sb.from('servicos').delete().eq('id', id);
+  renderServicos();
+}
+function abrirModalEditarServico(id) {
+  const s = SERVICOS_CACHE.find((x) => x.id === id);
+  if (!s) return;
+  abrirModal(`
+    <h2>Editar serviço</h2>
+    <form id="form-modal">
+      <div><label>Nome</label><input type="text" name="nome" value="${s.nome}" required /></div>
+      <div><label>Preço (R$)</label><input type="number" step="0.01" min="0" name="preco" value="${s.preco}" required /></div>
+      <div><label>Duração (min)</label><input type="number" min="1" name="duracao_min" value="${s.duracao_min}" required /></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await sb.from('servicos').update({ nome: f.get('nome'), preco: f.get('preco'), duracao_min: f.get('duracao_min') }).eq('id', id);
+    fecharModal();
+    renderServicos();
+  });
+}
+function abrirModalNovoServico() {
+  abrirModal(`
+    <h2>Novo serviço</h2>
+    <form id="form-modal">
+      <div><label>Nome</label><input type="text" name="nome" required /></div>
+      <div><label>Preço (R$)</label><input type="number" step="0.01" min="0" name="preco" required /></div>
+      <div><label>Duração (min)</label><input type="number" min="1" name="duracao_min" value="30" required /></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await sb.from('servicos').insert({ owner_id: UID, nome: f.get('nome'), preco: f.get('preco'), duracao_min: f.get('duracao_min') });
+    fecharModal();
+    renderServicos();
+  });
+}
+
+/* ---------- PRODUTOS ---------- */
+let PRODUTOS_CACHE = [];
+let LOJAS_CACHE = [];
+let BARBEIROS_PARA_PRODUTOS = [];
+let LOJAS_ABERTAS = {};
+let PEDIDOS_CACHE = [];
+
+async function renderProdutos() {
+  const [{ data: produtos }, { data: barbeiros }, { data: lojas }, { data: pedidos }] = await Promise.all([
+    sb.from('produtos').select('*').order('nome'),
+    sb.from('barbeiros').select('id, nome, foto_url').eq('owner_id', UID).eq('ativo', true).order('nome'),
+    sb.from('lojas').select('id, barbeiro_id').eq('owner_id', UID),
+    sb.from('pedidos')
+      .select('id, barbeiro_id, valor_total, status, criado_em, clientes(nome), pedido_itens(quantidade, produto_id, produtos(nome))')
+      .eq('owner_id', UID).order('criado_em', { ascending: false })
+  ]);
+  PRODUTOS_CACHE = produtos || [];
+  BARBEIROS_PARA_PRODUTOS = barbeiros || [];
+  LOJAS_CACHE = lojas || [];
+  PEDIDOS_CACHE = pedidos || [];
+
+  const btnCriarLoja = document.getElementById('btn-criar-loja');
+  if (btnCriarLoja) btnCriarLoja.style.display = PLANO_UM_BARBEIRO ? 'none' : '';
+
+  // no Bronze (1 barbeiro só) não faz sentido pedir pra "criar uma loja" —
+  // garante que ela já existe sozinha, sem o dono precisar fazer nada
+  if (PLANO_UM_BARBEIRO && BARBEIROS_PARA_PRODUTOS.length === 1 && !LOJAS_CACHE.some((l) => l.barbeiro_id === BARBEIROS_PARA_PRODUTOS[0].id)) {
+    await sb.from('lojas').insert({ owner_id: UID, barbeiro_id: BARBEIROS_PARA_PRODUTOS[0].id });
+    const { data: lojasAtualizadas } = await sb.from('lojas').select('id, barbeiro_id').eq('owner_id', UID);
+    LOJAS_CACHE = lojasAtualizadas || [];
+  }
+
+  desenharLojas();
+}
+
+function badgeStatusPedido(status) {
+  if (status === 'pago') return '<span class="badge badge-brass">✓ Pago</span>';
+  if (status === 'cancelado') return '<span class="badge badge-muted">Cancelado</span>';
+  return '<span class="badge badge-muted" style="color:#F5B942;">Pendente</span>';
+}
+let PERIODO_VENDAS = 'dia';
+function mudarPeriodoVendas(valor) {
+  PERIODO_VENDAS = valor;
+  desenharLojas();
+}
+function inicioPeriodoVendas() {
+  const hoje = agoraComoDigitosLocais().slice(0, 10);
+  if (PERIODO_VENDAS === 'dia') return hoje + 'T00:00:00';
+  if (PERIODO_VENDAS === 'mes') return hoje.slice(0, 7) + '-01T00:00:00';
+  const dias = { '7dias': 7, '14dias': 14, '21dias': 21 }[PERIODO_VENDAS] || 7;
+  return new Date(new Date(agoraComoDigitosLocais()).getTime() - dias * 24 * 60 * 60 * 1000).toISOString().slice(0, 19);
+}
+function valorVendidoNoPeriodo(barbeiroId) {
+  const inicio = inicioPeriodoVendas();
+  return PEDIDOS_CACHE
+    .filter((p) => p.barbeiro_id === barbeiroId && p.status === 'pago' && p.criado_em >= inicio)
+    .reduce((s, p) => s + Number(p.valor_total), 0);
+}
+function totalVendido(produtoId) {
+  let total = 0;
+  PEDIDOS_CACHE.forEach((ped) => {
+    if (ped.status !== 'pago') return;
+    (ped.pedido_itens || []).forEach((i) => { if (i.produto_id === produtoId) total += i.quantidade; });
+  });
+  return total;
+}
+async function marcarPedidoComoPago(pedidoId) {
+  if (!confirm('Marcar esse pedido como pago e baixar o estoque?')) return;
+  const agora = new Date().toISOString();
+  await sb.from('pedidos').update({ status: 'pago', pago_em: agora }).eq('id', pedidoId);
+  await sb.from('cobrancas').update({ status: 'pago', pago_em: agora }).eq('pedido_id', pedidoId);
+  await sb.rpc('baixar_estoque_pedido', { p_pedido_id: pedidoId });
+  renderProdutos();
+}
+
+async function removerPedido(id) {
+  if (!confirm('Excluir esse pedido do histórico? Essa ação não pode ser desfeita.')) return;
+  await sb.from('pedidos').delete().eq('id', id);
+  renderProdutos();
+}
+
+let PEDIDO_EDITANDO = null;
+function abrirModalEditarPedido(pedidoId) {
+  const ped = PEDIDOS_CACHE.find((p) => p.id === pedidoId);
+  if (!ped) return;
+  const itens = {};
+  (ped.pedido_itens || []).forEach((i) => { itens[i.produto_id] = i.quantidade; });
+  PEDIDO_EDITANDO = { id: pedidoId, barbeiro_id: ped.barbeiro_id, itens };
+  desenharModalEditarPedido();
+}
+function desenharModalEditarPedido() {
+  const produtosDaLoja = PRODUTOS_CACHE.filter((p) => p.barbeiro_id === PEDIDO_EDITANDO.barbeiro_id);
+  const total = produtosDaLoja.reduce((s, p) => s + Number(p.preco) * (PEDIDO_EDITANDO.itens[p.id] || 0), 0);
+  abrirModal(`
+    <h2>Editar pedido</h2>
+    <div style="max-height:320px;overflow-y:auto;">
+      ${produtosDaLoja.map((p) => {
+        const qtd = PEDIDO_EDITANDO.itens[p.id] || 0;
+        return `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+            <span>${p.nome}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button type="button" class="btn" onclick="alterarQtdPedidoEditando('${p.id}', -1)">−</button>
+              <span style="font-family:var(--font-mono);min-width:18px;text-align:center;">${qtd}</span>
+              <button type="button" class="btn" onclick="alterarQtdPedidoEditando('${p.id}', 1)">+</button>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:14px;font-family:var(--font-mono);color:var(--brass-soft);font-size:18px;">Total: ${fmtMoeda(total)}</div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="salvarPedidoEditado()">Salvar</button>
+    </div>
+  `);
+}
+function alterarQtdPedidoEditando(produtoId, delta) {
+  const atual = PEDIDO_EDITANDO.itens[produtoId] || 0;
+  const novo = Math.max(0, atual + delta);
+  if (novo === 0) delete PEDIDO_EDITANDO.itens[produtoId];
+  else PEDIDO_EDITANDO.itens[produtoId] = novo;
+  desenharModalEditarPedido();
+}
+async function salvarPedidoEditado() {
+  const produtosDaLoja = PRODUTOS_CACHE.filter((p) => p.barbeiro_id === PEDIDO_EDITANDO.barbeiro_id);
+  const itensArr = Object.entries(PEDIDO_EDITANDO.itens).map(([produto_id, quantidade]) => {
+    const p = produtosDaLoja.find((x) => x.id === produto_id);
+    return { pedido_id: PEDIDO_EDITANDO.id, produto_id, quantidade, preco_unitario: p ? p.preco : 0 };
+  });
+  const total = itensArr.reduce((s, i) => s + Number(i.preco_unitario) * i.quantidade, 0);
+
+  await sb.from('pedido_itens').delete().eq('pedido_id', PEDIDO_EDITANDO.id);
+  if (itensArr.length) await sb.from('pedido_itens').insert(itensArr);
+  await sb.from('pedidos').update({ valor_total: total }).eq('id', PEDIDO_EDITANDO.id);
+
+  PEDIDO_EDITANDO = null;
+  fecharModal();
+  renderProdutos();
+}
+
+const CORES_LOJA = ['#D8B4FE', '#7DD3FC', '#FCA5A5', '#86EFAC', '#FDBA74', '#F0ABFC', '#67E8F9', '#FDE047'];
+function desenharLojas() {
+  const nomeBarbeiro = (id) => { const b = BARBEIROS_PARA_PRODUTOS.find((x) => x.id === id); return b ? b.nome : 'Barbeiro removido'; };
+  const fotoBarbeiro = (id) => { const b = BARBEIROS_PARA_PRODUTOS.find((x) => x.id === id); return b ? b.foto_url : null; };
+
+  // Bronze (1 barbeiro só): mostra os produtos direto, sem separar por "loja"
+  if (PLANO_UM_BARBEIRO) {
+    const alvo = document.getElementById('lista-lojas');
+    if (!PRODUTOS_CACHE.length) {
+      alvo.innerHTML = `<div class="empty-state"><h3>Nenhum produto cadastrado</h3><p>Clique em "+ Novo produto" pra começar.</p></div>`;
+      return;
+    }
+    const barbeiroId = BARBEIROS_PARA_PRODUTOS[0] ? BARBEIROS_PARA_PRODUTOS[0].id : null;
+    alvo.innerHTML = `
+      <div class="grid grid-3" style="margin-bottom:24px;">
+        ${PRODUTOS_CACHE.map((p) => `
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <h3 style="color:var(--cream);font-size:16px;">${p.nome}</h3>
+              <div style="display:flex;gap:6px;">
+                <button class="btn" onclick="abrirModalEditarProduto('${p.id}')">Editar</button>
+                <button class="btn btn-danger" onclick="removerProduto('${p.id}')">Remover</button>
+              </div>
+            </div>
+            <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:20px;">${fmtMoeda(p.preco)}</span>
+            <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+              <span class="badge ${p.estoque > 0 ? 'badge-brass' : 'badge-muted'}">${p.estoque > 0 ? `${p.estoque} em estoque` : 'Sem estoque'}</span>
+              ${totalVendido(p.id) > 0 ? `<span class="badge badge-muted">-${totalVendido(p.id)} vendido(s)</span>` : ''}
+            </div>
+          </div>`).join('')}
+      </div>
+      <h3 style="margin-bottom:10px;">Histórico de vendas ${barbeiroId ? `<span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:14px;">${fmtMoeda(valorVendidoNoPeriodo(barbeiroId))}</span>` : ''}</h3>
+      ${(() => {
+        const vendas = barbeiroId ? PEDIDOS_CACHE.filter((ped) => ped.barbeiro_id === barbeiroId) : [];
+        if (!vendas.length) return '<p style="color:var(--muted);font-size:13px;">Nenhuma venda registrada ainda.</p>';
+        return `<table class="tabela-responsiva"><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>
+          ${vendas.map((ped) => `
+            <tr>
+              <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(ped.criado_em)}</td>
+              <td data-label="Cliente">${ped.clientes ? ped.clientes.nome : '—'}</td>
+              <td data-label="Itens" style="color:var(--muted);">${(ped.pedido_itens || []).map((i) => `${i.quantidade}x ${i.produtos ? i.produtos.nome : '—'}`).join(', ')}</td>
+              <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(ped.valor_total)}</td>
+              <td data-label="Status">${badgeStatusPedido(ped.status)}</td>
+              <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                ${ped.status === 'pendente' ? `<button class="btn" onclick="marcarPedidoComoPago('${ped.id}')">✓ Marcar pago</button>` : ''}
+                <button class="btn" onclick="abrirModalEditarPedido('${ped.id}')">Editar</button>
+                <button class="btn btn-danger" onclick="removerPedido('${ped.id}')">Excluir</button>
+              </td>
+            </tr>`).join('')}
+        </tbody></table>`;
+      })()}
+    `;
+    return;
+  }
+
+  document.getElementById('lista-lojas').innerHTML = LOJAS_CACHE.length ? LOJAS_CACHE.map((loja, indice) => {
+    const produtosDaLoja = PRODUTOS_CACHE.filter((p) => p.barbeiro_id === loja.barbeiro_id);
+    const aberta = !!LOJAS_ABERTAS[loja.barbeiro_id];
+    const cor = CORES_LOJA[indice % CORES_LOJA.length];
+    const foto = fotoBarbeiro(loja.barbeiro_id);
+    return `
+      <div class="card" style="margin-bottom:14px;border-left:4px solid ${cor};background:linear-gradient(90deg, ${cor}14, transparent 18%);">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="alternarLoja('${loja.barbeiro_id}')">
+          <h3 style="color:var(--cream);font-size:16px;display:flex;align-items:center;gap:10px;">
+            ${foto
+              ? `<img src="${foto}" alt="${nomeBarbeiro(loja.barbeiro_id)}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid ${cor};flex-shrink:0;" />`
+              : `<span style="width:32px;height:32px;border-radius:50%;background:${cor}33;border:2px solid ${cor};display:flex;align-items:center;justify-content:center;flex-shrink:0;">🏪</span>`}
+            Loja do ${nomeBarbeiro(loja.barbeiro_id)} <span style="color:var(--muted);font-weight:400;font-size:13px;">(${produtosDaLoja.length} produto(s))</span> <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:14px;">${fmtMoeda(valorVendidoNoPeriodo(loja.barbeiro_id))}</span>
+          </h3>
+          <button type="button" class="btn-seta">${aberta ? 'Ocultar ▴' : 'Ver produtos ▾'}</button>
+        </div>
+        ${aberta ? `
+          <div class="barber-stripe thin" style="margin:14px 0;"></div>
+          <button type="button" class="btn btn-primary" style="margin-bottom:14px;" onclick="event.stopPropagation();abrirModalNovoProduto('${loja.barbeiro_id}')">+ Adicionar produto</button>
+          <div class="grid grid-3">
+            ${produtosDaLoja.length ? produtosDaLoja.map((p) => `
+              <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                  <h3 style="color:var(--cream);font-size:16px;">${p.nome}</h3>
+                  <div style="display:flex;gap:6px;">
+                    <button class="btn" onclick="event.stopPropagation();abrirModalEditarProduto('${p.id}')">Editar</button>
+                    <button class="btn btn-danger" onclick="event.stopPropagation();removerProduto('${p.id}')">Remover</button>
+                  </div>
+                </div>
+                <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:20px;">${fmtMoeda(p.preco)}</span>
+                <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+                  <span class="badge ${p.estoque > 0 ? 'badge-brass' : 'badge-muted'}">${p.estoque > 0 ? `${p.estoque} em estoque` : 'Sem estoque'}</span>
+                  ${totalVendido(p.id) > 0 ? `<span class="badge badge-muted">-${totalVendido(p.id)} vendido(s)</span>` : ''}
+                </div>
+              </div>`).join('') : '<p style="color:var(--muted);">Nenhum produto nessa loja ainda.</p>'}
+          </div>
+          <div class="barber-stripe thin" style="margin:20px 0 14px;"></div>
+          <h3 style="margin-bottom:10px;">Histórico de vendas</h3>
+          ${(() => {
+            const vendas = PEDIDOS_CACHE.filter((ped) => ped.barbeiro_id === loja.barbeiro_id);
+            if (!vendas.length) return '<p style="color:var(--muted);font-size:13px;">Nenhuma venda registrada ainda.</p>';
+            return `<table class="tabela-responsiva"><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>
+              ${vendas.map((ped) => `
+                <tr>
+                  <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(ped.criado_em)}</td>
+                  <td data-label="Cliente">${ped.clientes ? ped.clientes.nome : '—'}</td>
+                  <td data-label="Itens" style="color:var(--muted);">${(ped.pedido_itens || []).map((i) => `${i.quantidade}x ${i.produtos ? i.produtos.nome : '—'}`).join(', ')}</td>
+                  <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(ped.valor_total)}</td>
+                  <td data-label="Status">${badgeStatusPedido(ped.status)}</td>
+                  <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                    ${ped.status === 'pendente' ? `<button class="btn" onclick="event.stopPropagation();marcarPedidoComoPago('${ped.id}')">✓ Marcar pago</button>` : ''}
+                    <button class="btn" onclick="event.stopPropagation();abrirModalEditarPedido('${ped.id}')">Editar</button>
+                    <button class="btn btn-danger" onclick="event.stopPropagation();removerPedido('${ped.id}')">Excluir</button>
+                  </td>
+                </tr>`).join('')}
+            </tbody></table>`;
+          })()}
+        ` : ''}
+      </div>`;
+  }).join('') : `<div class="empty-state"><h3>Nenhuma loja criada</h3><p>Clique em "+ Criar loja" pra dar acesso a um barbeiro vender os próprios produtos.</p></div>`;
+}
+
+function alternarLoja(barbeiroId) {
+  LOJAS_ABERTAS[barbeiroId] = !LOJAS_ABERTAS[barbeiroId];
+  desenharLojas();
+}
+
+async function removerProduto(id) {
+  if (!confirm('Remover este produto?')) return;
+  await sb.from('produtos').delete().eq('id', id);
+  renderProdutos();
+}
+
+async function abrirModalCriarLoja() {
+  if (PERFIL && PERFIL.plano_plataforma_id) {
+    const { data: plano } = await sb.from('planos_plataforma').select('nome, max_barbeiros').eq('id', PERFIL.plano_plataforma_id).single();
+    if (plano && plano.max_barbeiros && LOJAS_CACHE.length >= plano.max_barbeiros) {
+      abrirModal(`
+        <h2>Limite do plano atingido</h2>
+        <p style="color:var(--muted);font-size:13px;margin-top:10px;">Seu ${plano.nome} permite até ${plano.max_barbeiros} loja(s). Pra criar mais uma, fale com a Smart Link pra fazer upgrade do plano.</p>
+        <div class="modal-actions"><button type="button" class="btn btn-primary" onclick="fecharModal()">Entendi</button></div>
+      `);
+      return;
+    }
+  }
+  const semLoja = BARBEIROS_PARA_PRODUTOS.filter((b) => !LOJAS_CACHE.some((l) => l.barbeiro_id === b.id));
+  if (!semLoja.length) {
+    abrirModal(`
+      <h2>Criar loja</h2>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px;">Todos os barbeiros ativos já têm uma loja criada.</p>
+      <div class="modal-actions"><button type="button" class="btn btn-primary" onclick="fecharModal()">Fechar</button></div>
+    `);
+    return;
+  }
+  abrirModal(`
+    <h2>Criar loja</h2>
+    <form id="form-modal">
+      <div><label>Loja de qual barbeiro</label><select name="barbeiro_id" required>${semLoja.map((b) => `<option value="${b.id}">${b.nome}</option>`).join('')}</select></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Criar loja</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await sb.from('lojas').insert({ owner_id: UID, barbeiro_id: f.get('barbeiro_id') });
+    LOJAS_ABERTAS[f.get('barbeiro_id')] = true;
+    fecharModal();
+    renderProdutos();
+  });
+}
+
+function opcoesBarbeiroComLojaHtml(selecionadoId) {
+  const comLoja = BARBEIROS_PARA_PRODUTOS.filter((b) => LOJAS_CACHE.some((l) => l.barbeiro_id === b.id));
+  if (!comLoja.length) return '<option value="">Crie uma loja primeiro</option>';
+  return comLoja.map((b) => `<option value="${b.id}" ${b.id === selecionadoId ? 'selected' : ''}>${b.nome}</option>`).join('');
+}
+
+function abrirModalNovoProduto(barbeiroIdFixo) {
+  if (!barbeiroIdFixo && PLANO_UM_BARBEIRO && BARBEIROS_PARA_PRODUTOS.length) barbeiroIdFixo = BARBEIROS_PARA_PRODUTOS[0].id;
+  abrirModal(`
+    <h2>Novo produto</h2>
+    <form id="form-modal">
+      <div><label>Nome</label><input type="text" name="nome" required /></div>
+      <div><label>Preço (R$)</label><input type="number" step="0.01" min="0" name="preco" required /></div>
+      <div><label>Quantidade em estoque</label><input type="number" step="1" min="0" name="estoque" value="0" required /></div>
+      ${barbeiroIdFixo
+        ? `<input type="hidden" name="barbeiro_id" value="${barbeiroIdFixo}" />`
+        : `<div><label>Loja de qual barbeiro</label><select name="barbeiro_id" required>${opcoesBarbeiroComLojaHtml(null)}</select></div>`}
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await sb.from('produtos').insert({ owner_id: UID, nome: f.get('nome'), preco: f.get('preco'), estoque: f.get('estoque'), barbeiro_id: f.get('barbeiro_id') });
+    if (barbeiroIdFixo) LOJAS_ABERTAS[barbeiroIdFixo] = true;
+    fecharModal();
+    renderProdutos();
+  });
+}
+function abrirModalEditarProduto(id) {
+  const p = PRODUTOS_CACHE.find((x) => x.id === id);
+  if (!p) return;
+  abrirModal(`
+    <h2>Editar produto</h2>
+    <form id="form-modal">
+      <div><label>Nome</label><input type="text" name="nome" value="${p.nome}" required /></div>
+      <div><label>Preço (R$)</label><input type="number" step="0.01" min="0" name="preco" value="${p.preco}" required /></div>
+      <div><label>Quantidade em estoque</label><input type="number" step="1" min="0" name="estoque" value="${p.estoque || 0}" required /></div>
+      ${PLANO_UM_BARBEIRO
+        ? `<input type="hidden" name="barbeiro_id" value="${p.barbeiro_id}" />`
+        : `<div><label>Loja de qual barbeiro</label><select name="barbeiro_id" required>${opcoesBarbeiroComLojaHtml(p.barbeiro_id)}</select></div>`}
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await sb.from('produtos').update({ nome: f.get('nome'), preco: f.get('preco'), estoque: f.get('estoque'), barbeiro_id: f.get('barbeiro_id') }).eq('id', id);
+    fecharModal();
+    renderProdutos();
+  });
+}
+
+/* ---------- PLANOS ---------- */
+let PLANOS_CACHE = [];
+let BARBEIROS_PARA_PLANOS = [];
+let PLANOS_ABERTOS = {};
+
+async function renderPlanos() {
+  const [{ data: planos }, { data: barbeiros }] = await Promise.all([
+    sb.from('planos').select('*').order('nome'),
+    sb.from('barbeiros').select('id, nome, foto_url').eq('owner_id', UID).eq('ativo', true).order('nome')
+  ]);
+  PLANOS_CACHE = planos || [];
+  BARBEIROS_PARA_PLANOS = barbeiros || [];
+  desenharPlanosPorBarbeiro();
+}
+
+function desenharPlanosPorBarbeiro() {
+  // Bronze (1 barbeiro só): mostra os planos direto, sem separar por barbeiro
+  if (PLANO_UM_BARBEIRO) {
+    const alvo = document.getElementById('lista-planos-por-barbeiro');
+    if (!PLANOS_CACHE.length) {
+      alvo.innerHTML = `<div class="empty-state"><h3>Nenhum plano cadastrado</h3><p>Clique em "+ Novo plano" pra começar.</p></div>`;
+      return;
+    }
+    alvo.innerHTML = `<div class="grid grid-3">${PLANOS_CACHE.map((p) => `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <h3 style="color:var(--cream);font-size:16px;">${p.nome}</h3>
+            ${p.badge ? `<span class="badge badge-brass" style="margin-top:4px;">${p.badge}</span>` : ''}
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn" onclick="abrirModalEditarPlano('${p.id}')">Editar</button>
+            <button class="btn btn-danger" onclick="removerPlano('${p.id}')">Remover</button>
+          </div>
+        </div>
+        <p style="color:var(--muted);font-size:13px;margin:8px 0;">${p.descricao || ''}</p>
+        <div style="margin-bottom:8px;">${(p.servicos_inclusos||[]).map((s) => `<span class="badge badge-muted" style="margin:2px 4px 2px 0;">${s}</span>`).join('')}</div>
+        <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:20px;">${fmtMoeda(p.preco)}<span style="font-size:12px;color:var(--muted);">/mês</span></span>
+      </div>`).join('')}</div>`;
+    return;
+  }
+
+  const idsComPlano = BARBEIROS_PARA_PLANOS.filter((b) => PLANOS_CACHE.some((p) => p.barbeiro_id === b.id));
+  document.getElementById('lista-planos-por-barbeiro').innerHTML = idsComPlano.length ? idsComPlano.map((b, indice) => {
+    const planosDoBarbeiro = PLANOS_CACHE.filter((p) => p.barbeiro_id === b.id);
+    const aberto = !!PLANOS_ABERTOS[b.id];
+    const cor = CORES_LOJA[indice % CORES_LOJA.length];
+    return `
+      <div class="card" style="margin-bottom:14px;border-left:4px solid ${cor};background:linear-gradient(90deg, ${cor}14, transparent 18%);">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="alternarPlanosBarbeiro('${b.id}')">
+          <h3 style="color:var(--cream);font-size:16px;display:flex;align-items:center;gap:10px;">
+            ${b.foto_url
+              ? `<img src="${b.foto_url}" alt="${b.nome}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid ${cor};flex-shrink:0;" />`
+              : `<span style="width:32px;height:32px;border-radius:50%;background:${cor}33;border:2px solid ${cor};display:flex;align-items:center;justify-content:center;flex-shrink:0;">🎟️</span>`}
+            Planos do ${b.nome} <span style="color:var(--muted);font-weight:400;font-size:13px;">(${planosDoBarbeiro.length} plano(s))</span>
+          </h3>
+          <button type="button" class="btn-seta">${aberto ? 'Ocultar ▴' : 'Ver planos ▾'}</button>
+        </div>
+        ${aberto ? `
+          <div class="barber-stripe thin" style="margin:14px 0;"></div>
+          <button type="button" class="btn btn-primary" style="margin-bottom:14px;" onclick="event.stopPropagation();abrirModalNovoPlano('${b.id}')">+ Adicionar plano</button>
+          <div class="grid grid-3">
+            ${planosDoBarbeiro.map((p) => `
+              <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                  <div>
+                    <h3 style="color:var(--cream);font-size:16px;">${p.nome}</h3>
+                    ${p.badge ? `<span class="badge badge-brass" style="margin-top:4px;">${p.badge}</span>` : ''}
+                  </div>
+                  <div style="display:flex;gap:6px;">
+                    <button class="btn" onclick="event.stopPropagation();abrirModalEditarPlano('${p.id}')">Editar</button>
+                    <button class="btn btn-danger" onclick="event.stopPropagation();removerPlano('${p.id}')">Remover</button>
+                  </div>
+                </div>
+                <p style="color:var(--muted);font-size:13px;margin:8px 0;">${p.descricao || ''}</p>
+                <div style="margin-bottom:8px;">${(p.servicos_inclusos||[]).map((s) => `<span class="badge badge-muted" style="margin:2px 4px 2px 0;">${s}</span>`).join('')}</div>
+                <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:20px;">${fmtMoeda(p.preco)}<span style="font-size:12px;color:var(--muted);">/mês</span></span>
+              </div>`).join('')}
+          </div>
+        ` : ''}
+      </div>`;
+  }).join('') : `<div class="empty-state"><h3>Nenhum plano cadastrado</h3><p>Clique em "+ Novo plano" e escolha de qual barbeiro é.</p></div>`;
+}
+
+function alternarPlanosBarbeiro(barbeiroId) {
+  PLANOS_ABERTOS[barbeiroId] = !PLANOS_ABERTOS[barbeiroId];
+  desenharPlanosPorBarbeiro();
+}
+
+async function removerPlano(id) {
+  if (!confirm('Remover este plano?')) return;
+  await sb.from('planos').delete().eq('id', id);
+  renderPlanos();
+}
+async function abrirModalNovoPlano(barbeiroIdFixo) {
+  if (!barbeiroIdFixo && PLANO_UM_BARBEIRO && BARBEIROS_PARA_PLANOS.length) barbeiroIdFixo = BARBEIROS_PARA_PLANOS[0].id;
+  const { data: servicos } = await sb.from('servicos').select('id,nome').order('nome');
+  abrirModal(`
+    <h2>Novo plano</h2>
+    <form id="form-modal">
+      <div><label>Nome</label><input type="text" name="nome" required /></div>
+      ${barbeiroIdFixo
+        ? `<input type="hidden" name="barbeiro_id" value="${barbeiroIdFixo}" />`
+        : `<div><label>Plano de qual barbeiro</label><select name="barbeiro_id" required>${BARBEIROS_PARA_PLANOS.map((b) => `<option value="${b.id}">${b.nome}</option>`).join('') || '<option value="">Cadastre um barbeiro primeiro</option>'}</select></div>`}
+      <div><label>Selo (opcional)</label><input type="text" name="badge" placeholder="Ex: Ilimitado" /></div>
+      <div><label>Descrição</label><input type="text" name="descricao" placeholder="Ex: Corte quantas vezes quiser" /></div>
+      <div><label>Preço mensal (R$)</label><input type="number" step="0.01" min="0" name="preco" required /></div>
+      <div><label>Limite de usos por mês (deixe em branco pra ilimitado)</label><input type="number" step="1" min="1" name="limite_mensal" /></div>
+      <div>
+        <label>Serviços inclusos</label>
+        <div style="max-height:140px;overflow-y:auto;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;">
+          ${(servicos||[]).map((s) => `<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;text-transform:none;color:var(--cream);font-size:13px;"><input type="checkbox" name="servico" value="${s.nome}" style="width:auto;" /> ${s.nome}</label>`).join('') || '<span style="color:var(--muted);font-size:13px;">Cadastre serviços primeiro</span>'}
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const servicosSelecionados = Array.from(e.target.querySelectorAll('input[name="servico"]:checked')).map((c) => c.value);
+    await sb.from('planos').insert({
+      owner_id: UID,
+      nome: f.get('nome'),
+      barbeiro_id: f.get('barbeiro_id'),
+      badge: f.get('badge') || null,
+      descricao: f.get('descricao') || null,
+      preco: f.get('preco'),
+      limite_mensal: f.get('limite_mensal') || null,
+      servicos_inclusos: servicosSelecionados
+    });
+    if (barbeiroIdFixo) PLANOS_ABERTOS[barbeiroIdFixo] = true;
+    fecharModal();
+    renderPlanos();
+  });
+}
+async function abrirModalEditarPlano(id) {
+  const p = PLANOS_CACHE.find((x) => x.id === id);
+  if (!p) return;
+  const { data: servicos } = await sb.from('servicos').select('id,nome').order('nome');
+  const inclusos = p.servicos_inclusos || [];
+  abrirModal(`
+    <h2>Editar plano</h2>
+    <form id="form-modal">
+      <div><label>Nome</label><input type="text" name="nome" value="${p.nome}" required /></div>
+      ${PLANO_UM_BARBEIRO
+        ? `<input type="hidden" name="barbeiro_id" value="${p.barbeiro_id}" />`
+        : `<div><label>Plano de qual barbeiro</label><select name="barbeiro_id" required>${BARBEIROS_PARA_PLANOS.map((b) => `<option value="${b.id}" ${b.id === p.barbeiro_id ? 'selected' : ''}>${b.nome}</option>`).join('')}</select></div>`}
+      <div><label>Selo (opcional)</label><input type="text" name="badge" placeholder="Ex: Ilimitado" value="${p.badge || ''}" /></div>
+      <div><label>Descrição</label><input type="text" name="descricao" placeholder="Ex: Corte quantas vezes quiser" value="${p.descricao || ''}" /></div>
+      <div><label>Preço mensal (R$)</label><input type="number" step="0.01" min="0" name="preco" value="${p.preco}" required /></div>
+      <div><label>Limite de usos por mês (deixe em branco pra ilimitado)</label><input type="number" step="1" min="1" name="limite_mensal" value="${p.limite_mensal || ''}" /></div>
+      <div>
+        <label>Serviços inclusos</label>
+        <div style="max-height:140px;overflow-y:auto;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;">
+          ${(servicos||[]).map((s) => `<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;text-transform:none;color:var(--cream);font-size:13px;"><input type="checkbox" name="servico" value="${s.nome}" style="width:auto;" ${inclusos.includes(s.nome) ? 'checked' : ''} /> ${s.nome}</label>`).join('') || '<span style="color:var(--muted);font-size:13px;">Cadastre serviços primeiro</span>'}
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const servicosSelecionados = Array.from(e.target.querySelectorAll('input[name="servico"]:checked')).map((c) => c.value);
+    await sb.from('planos').update({
+      nome: f.get('nome'),
+      barbeiro_id: f.get('barbeiro_id'),
+      badge: f.get('badge') || null,
+      descricao: f.get('descricao') || null,
+      preco: f.get('preco'),
+      limite_mensal: f.get('limite_mensal') || null,
+      servicos_inclusos: servicosSelecionados
+    }).eq('id', id);
+    fecharModal();
+    renderPlanos();
+  });
+}
+
+/* ---------- BARBEIROS ---------- */
+let BARBEIROS_CACHE = [];
+async function renderBarbeiros() {
+  const { data: barbeiros } = await sb.from('barbeiros')
+    .select('id,nome,telefone,comissao_pct,ativo,foto_url,mp_conectado')
+    .order('nome');
+  const { data: concluidos } = await sb.from('agendamentos').select('barbeiro_id, valor').eq('status', 'concluido');
+  BARBEIROS_CACHE = barbeiros || [];
+  const mapa = {};
+  (concluidos||[]).forEach((a) => {
+    if (!a.barbeiro_id) return;
+    if (!mapa[a.barbeiro_id]) mapa[a.barbeiro_id] = { cortes: 0, faturado: 0 };
+    mapa[a.barbeiro_id].cortes += 1;
+    mapa[a.barbeiro_id].faturado += Number(a.valor||0);
+  });
+  const lista = BARBEIROS_CACHE;
+  document.getElementById('corpo-barbeiros').innerHTML = lista.length ? lista.map((b) => {
+    const info = mapa[b.id] || { cortes: 0, faturado: 0 };
+    const comissao = info.faturado * Number(b.comissao_pct) / 100;
+    const avatar = b.foto_url
+      ? `<img src="${b.foto_url}" alt="${b.nome}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />`
+      : `<div style="width:36px;height:36px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);color:var(--brass-soft);font-size:14px;">${b.nome.slice(0,1)}</div>`;
+    const mpBotao = b.mp_conectado
+      ? `<span style="display:inline-flex;align-items:center;gap:8px;font-size:12px;">
+          <span style="display:inline-flex;align-items:center;gap:5px;color:#7FE0A7;font-weight:600;"><span style="width:7px;height:7px;border-radius:50%;background:#7FE0A7;display:inline-block;"></span> Mercado Pago conectado</span>
+          <button type="button" class="btn btn-danger" style="padding:3px 8px;font-size:11px;" onclick="desconectarMercadoPago('${b.id}')">Desconectar</button>
+        </span>`
+      : `<button type="button" class="btn-mp" onclick="conectarMercadoPago('${b.id}')">${LOGO_MP_SVG} Conectar Mercado Pago</button>`;
+    return `<tr>
+      <td data-label="Foto">${avatar}</td>
+      <td data-label="Nome">${b.nome}<div style="margin-top:6px;">${mpBotao}</div></td>
+      <td data-label="Comissão" style="color:var(--muted);">${b.comissao_pct}%</td>
+      <td data-label="Cortes concluídos">${info.cortes}</td>
+      <td data-label="Faturado" style="font-family:var(--font-mono);">${fmtMoeda(info.faturado)}</td>
+      <td data-label="Comissão a pagar" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(comissao)}</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-ghost" onclick="abrirModalEditarBarbeiro('${b.id}')">Editar</button>
+        <button class="btn btn-danger" onclick="removerBarbeiro('${b.id}')">Remover</button>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" style="color:var(--muted);text-align:center;">Nenhum barbeiro cadastrado</td></tr>`;
+}
+async function removerBarbeiro(id) {
+  if (!confirm('Remover este barbeiro?')) return;
+  await sb.from('barbeiros').delete().eq('id', id);
+  renderBarbeiros();
+}
+async function abrirModalNovoBarbeiro() {
+  if (PERFIL && PERFIL.plano_plataforma_id) {
+    const { data: plano } = await sb.from('planos_plataforma').select('nome, max_barbeiros').eq('id', PERFIL.plano_plataforma_id).single();
+    if (plano && plano.max_barbeiros) {
+      const { count } = await sb.from('barbeiros').select('id', { count: 'exact', head: true }).eq('owner_id', UID).eq('ativo', true);
+      if (count >= plano.max_barbeiros) {
+        abrirModal(`
+          <h2>Limite do plano atingido</h2>
+          <p style="color:var(--muted);font-size:13px;margin-top:10px;">Seu ${plano.nome} permite até ${plano.max_barbeiros} barbeiro(s) ativo(s). Pra cadastrar mais um, fale com a Smart Link pra fazer upgrade do plano.</p>
+          <div class="modal-actions"><button type="button" class="btn btn-primary" onclick="fecharModal()">Entendi</button></div>
+        `);
+        return;
+      }
+    }
+  }
+  abrirModal(`
+    <h2>Novo barbeiro</h2>
+    <form id="form-modal">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px;">
+        <img id="barbeiro-foto-preview" src="logo.png" alt="Foto do barbeiro" style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--surface-2);border:1px solid var(--border);flex-shrink:0;" />
+        <div style="flex:1;">
+          <label>Foto</label>
+          <input type="file" id="barbeiro-foto-input" accept="image/*" />
+        </div>
+      </div>
+      <div><label>Nome</label><input type="text" name="nome" required /></div>
+      <div><label>Telefone</label><input type="text" name="telefone" /></div>
+      <div><label>Comissão (%)</label><input type="number" step="0.01" min="0" max="100" name="comissao_pct" value="40" required /></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('barbeiro-foto-input').addEventListener('change', (e) => {
+    const arquivo = e.target.files[0];
+    if (!arquivo) return;
+    document.getElementById('barbeiro-foto-preview').src = URL.createObjectURL(arquivo);
+  });
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const novoId = crypto.randomUUID();
+    const registro = { id: novoId, owner_id: UID, nome: f.get('nome'), telefone: f.get('telefone') || null, comissao_pct: f.get('comissao_pct') };
+    const arquivoOriginal = document.getElementById('barbeiro-foto-input').files[0];
+    if (arquivoOriginal) {
+      const { arquivo, extensao } = await comprimirImagem(arquivoOriginal);
+      const caminho = `${UID}/barbeiros/${novoId}.${extensao}`;
+      const { error: erroUpload } = await sb.storage.from('logos').upload(caminho, arquivo, { upsert: true, contentType: arquivo.type });
+      if (erroUpload) { alert('Não foi possível enviar a foto. Tente novamente.'); return; }
+      const { data: urlData } = sb.storage.from('logos').getPublicUrl(caminho);
+      registro.foto_url = urlData.publicUrl + '?v=' + Date.now();
+    }
+    await sb.from('barbeiros').insert(registro);
+    fecharModal();
+    renderBarbeiros();
+  });
+}
+
+function abrirModalEditarBarbeiro(id) {
+  const b = BARBEIROS_CACHE.find((x) => x.id === id);
+  if (!b) return;
+  abrirModal(`
+    <h2>Editar barbeiro</h2>
+    <form id="form-modal">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px;">
+        <img id="barbeiro-foto-preview" src="${b.foto_url || 'logo.png'}" alt="Foto do barbeiro" style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--surface-2);border:1px solid var(--border);flex-shrink:0;" />
+        <div style="flex:1;">
+          <label>Foto</label>
+          <input type="file" id="barbeiro-foto-input" accept="image/*" />
+        </div>
+      </div>
+      <div><label>Nome</label><input type="text" name="nome" value="${b.nome}" required /></div>
+      <div><label>Telefone</label><input type="text" name="telefone" value="${b.telefone || ''}" /></div>
+      <div><label>Comissão (%)</label><input type="number" step="0.01" min="0" max="100" name="comissao_pct" value="${b.comissao_pct}" required /></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('barbeiro-foto-input').addEventListener('change', (e) => {
+    const arquivo = e.target.files[0];
+    if (!arquivo) return;
+    document.getElementById('barbeiro-foto-preview').src = URL.createObjectURL(arquivo);
+  });
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const atualizacao = { nome: f.get('nome'), telefone: f.get('telefone') || null, comissao_pct: f.get('comissao_pct') };
+    const arquivoOriginal = document.getElementById('barbeiro-foto-input').files[0];
+    if (arquivoOriginal) {
+      const { arquivo, extensao } = await comprimirImagem(arquivoOriginal);
+      const caminho = `${UID}/barbeiros/${b.id}.${extensao}`;
+      const { error: erroUpload } = await sb.storage.from('logos').upload(caminho, arquivo, { upsert: true, contentType: arquivo.type });
+      if (erroUpload) { alert('Não foi possível enviar a foto. Tente novamente.'); return; }
+      const { data: urlData } = sb.storage.from('logos').getPublicUrl(caminho);
+      atualizacao.foto_url = urlData.publicUrl + '?v=' + Date.now();
+    }
+    await sb.from('barbeiros').update(atualizacao).eq('id', b.id);
+    fecharModal();
+    renderBarbeiros();
+  });
+}
+
+/* ---------- FINANCEIRO ---------- */
+async function renderFinanceiro() {
+  document.getElementById('input-mes-financeiro').value = mesFinanceiroAtual;
+  const [ano, mes] = mesFinanceiroAtual.split('-').map(Number);
+  const inicio = mesFinanceiroAtual + '-01';
+  const fim = `${mesFinanceiroAtual}-${String(new Date(ano, mes, 0).getDate()).padStart(2,'0')}`;
+
+  const [{ data: entradasRaw }, { data: saidasRaw }] = await Promise.all([
+    sb.from('agendamentos').select('id, valor, data_hora, concluido_em, clientes(nome), servicos!agendamentos_servico_id_fkey(nome), agendamento_servicos(servicos(nome)), cobrancas(metodo, status), pago')
+      .eq('status', 'concluido').not('concluido_em', 'is', null).gte('concluido_em', inicio + 'T00:00:00').lte('concluido_em', fim + 'T23:59:59'),
+    sb.from('despesas').select('*').gte('data', inicio).lte('data', fim)
+  ]);
+  const entradas = entradasRaw || [];
+  const saidas = saidasRaw || [];
+  const totalEntradas = entradas.reduce((s,a) => s + Number(a.valor||0), 0);
+  const totalSaidas = saidas.reduce((s,d) => s + Number(d.valor||0), 0);
+
+  document.getElementById('f-entradas').textContent = fmtMoeda(totalEntradas);
+  document.getElementById('f-saidas').textContent = fmtMoeda(totalSaidas);
+  document.getElementById('f-saldo').textContent = fmtMoeda(totalEntradas - totalSaidas);
+
+  const lancamentos = [
+    ...entradas.map((a) => ({ id: a.id, tabela: 'agendamento', data: a.concluido_em.slice(0,10), desc: `${nomesServicosDe(a)} — ${a.clientes?a.clientes.nome:'Cliente'}`, tipo: 'entrada', valor: Number(a.valor||0), forma: formaPagamentoDe(a) })),
+    ...saidas.map((d) => ({ id: d.id, tabela: 'despesa', data: d.data, desc: d.descricao, tipo: 'saida', valor: Number(d.valor||0), forma: '—' }))
+  ].sort((a,b) => b.data.localeCompare(a.data));
+
+  document.getElementById('corpo-financeiro').innerHTML = lancamentos.length ? lancamentos.map((l) => `
+    <tr>
+      <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(l.data)}</td>
+      <td data-label="Descrição">${l.desc}</td>
+      <td data-label="Tipo"><span class="badge ${l.tipo==='entrada'?'badge-green':'badge-red'}">${l.tipo}</span></td>
+      <td data-label="Forma" style="color:var(--muted);">${l.forma}</td>
+      <td data-label="Valor" style="font-family:var(--font-mono);">${fmtMoeda(l.valor)}</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-ghost" onclick="abrirModalEditarLancamento('${l.tabela}','${l.id}')">Editar</button>
+        <button class="btn btn-danger" onclick="excluirLancamento('${l.tabela}','${l.id}')">Excluir</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="6" style="color:var(--muted);text-align:center;">Nenhum lançamento neste mês</td></tr>`;
+}
+
+async function apagarTudoFinanceiro() {
+  const [ano, mes] = mesFinanceiroAtual.split('-').map(Number);
+  const inicio = mesFinanceiroAtual + '-01';
+  const fim = `${mesFinanceiroAtual}-${String(new Date(ano, mes, 0).getDate()).padStart(2,'0')}`;
+  const nomeMes = new Date(ano, mes - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  if (!confirm(`Apagar TODOS os lançamentos de ${nomeMes}? As entradas somem do caixa (os agendamentos continuam existindo) e as saídas são excluídas de vez. Essa ação não pode ser desfeita.`)) return;
+
+  await sb.from('despesas').delete().gte('data', inicio).lte('data', fim);
+  await sb.from('agendamentos').update({ concluido_em: null })
+    .eq('status', 'concluido').not('concluido_em', 'is', null)
+    .gte('concluido_em', inicio + 'T00:00:00').lte('concluido_em', fim + 'T23:59:59');
+
+  renderFinanceiro();
+}
+
+async function excluirLancamento(tabela, id) {
+  if (tabela === 'despesa') {
+    if (!confirm('Excluir esse lançamento de saída?')) return;
+    await sb.from('despesas').delete().eq('id', id);
+  } else {
+    if (!confirm('Remover essa entrada do financeiro? O agendamento continua existindo (some só do caixa).')) return;
+    await sb.from('agendamentos').update({ concluido_em: null }).eq('id', id);
+  }
+  renderFinanceiro();
+}
+
+function abrirModalEditarLancamento(tabela, id) {
+  if (tabela === 'despesa') {
+    sb.from('despesas').select('*').eq('id', id).single().then(({ data: d }) => {
+      if (!d) return;
+      abrirModal(`
+        <h2>Editar saída</h2>
+        <form id="form-modal">
+          <div><label>Descrição</label><input type="text" name="descricao" value="${d.descricao || ''}" required /></div>
+          <div><label>Valor (R$)</label><input type="number" step="0.01" min="0" name="valor" value="${d.valor}" required /></div>
+          <div><label>Data</label><input type="date" name="data" value="${d.data}" required /></div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </div>
+        </form>
+      `);
+      document.getElementById('form-modal').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const f = new FormData(e.target);
+        await sb.from('despesas').update({ descricao: f.get('descricao'), valor: f.get('valor'), data: f.get('data') }).eq('id', id);
+        fecharModal();
+        renderFinanceiro();
+      });
+    });
+  } else {
+    sb.from('agendamentos').select('valor').eq('id', id).single().then(({ data: a }) => {
+      if (!a) return;
+      abrirModal(`
+        <h2>Editar valor da entrada</h2>
+        <form id="form-modal">
+          <div><label>Valor (R$)</label><input type="number" step="0.01" min="0" name="valor" value="${a.valor}" required /></div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </div>
+        </form>
+      `);
+      document.getElementById('form-modal').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const f = new FormData(e.target);
+        await sb.from('agendamentos').update({ valor: f.get('valor') }).eq('id', id);
+        fecharModal();
+        renderFinanceiro();
+      });
+    });
+  }
+}
+document.getElementById('input-mes-financeiro').addEventListener('change', (e) => {
+  mesFinanceiroAtual = e.target.value;
+  renderFinanceiro();
+});
+function abrirModalNovaDespesa() {
+  abrirModal(`
+    <h2>Novo lançamento (saída)</h2>
+    <form id="form-modal">
+      <div><label>Descrição</label><input type="text" name="descricao" required /></div>
+      <div><label>Valor (R$)</label><input type="number" step="0.01" min="0" name="valor" required /></div>
+      <div><label>Data</label><input type="date" name="data" value="${new Date().toISOString().slice(0,10)}" required /></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await sb.from('despesas').insert({ owner_id: UID, descricao: f.get('descricao'), valor: f.get('valor'), data: f.get('data') });
+    fecharModal();
+    mesFinanceiroAtual = f.get('data').slice(0,7);
+    renderFinanceiro();
+  });
+}
+
+/* ---------- SESSÃO ---------- */
+document.getElementById('btn-sair').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  irPara('login.html');
+});
+
+// Se a sessão salva no navegador trocar de usuário por baixo dos panos —
+// por exemplo, você loga numa OUTRA conta em outra aba do mesmo site, e o
+// localStorage (compartilhado entre abas) muda pra essa conta nova — essa
+// aba recarrega inteira. Sem isso, a página continuava com o cabeçalho e o
+// UID da conta antiga enquanto as consultas novas já rodavam com a sessão
+// trocada, misturando dados de duas contas na tela.
+sb.auth.onAuthStateChange((evento, session) => {
+  if (evento === 'SIGNED_OUT') { irPara('login.html'); return; }
+  if (session && UID && session.user.id !== UID) {
+    location.reload();
+  }
+});
+
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { irPara('login.html'); return; }
+  UID = session.user.id;
+  await carregarPerfil();
+  if (!PERFIL) { await sb.auth.signOut(); irPara('login.html'); return; }
+
+  // processa o retorno do pagamento ANTES de checar se está liberado —
+  // quem paga estando pausado precisa que isso confirme e libere agora,
+  // não depois de já ter caído na tela de "assinatura pausada"
+  const paramsRetorno = new URLSearchParams(location.search);
+  if (paramsRetorno.get('plano') === 'pago') {
+    const order_nsu = paramsRetorno.get('order_nsu');
+    const slug = paramsRetorno.get('slug');
+    const transaction_nsu = paramsRetorno.get('transaction_nsu');
+    const receipt_url = paramsRetorno.get('receipt_url');
+    history.replaceState(null, '', location.pathname);
+    if (order_nsu && slug && transaction_nsu) {
+      try {
+        const r = await fetch('/api/infinitepay-confirmar-retorno', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_nsu, slug, transaction_nsu, receipt_url })
+        });
+        const d = await r.json();
+        if (d.pago || d.ja_confirmado) {
+          alert('Pagamento confirmado! Seu plano já foi renovado.');
+          await carregarPerfil();
+        } else {
+          alert('Pagamento recebido pela InfinitePay, mas ainda não confirmado. Assim que confirmar, seu plano é renovado automaticamente.');
+        }
+      } catch (e) {
+        alert('Pagamento enviado! Assim que a InfinitePay confirmar, seu plano é renovado automaticamente.');
+      }
+    } else {
+      alert('Pagamento enviado! Assim que a InfinitePay confirmar, seu plano é renovado automaticamente.');
+    }
+  }
+
+  if (!PERFIL.liberado) { document.getElementById('tela-pausado').style.display = 'flex'; return; }
+  document.getElementById('tela-pausado').style.display = 'none';
+  if (!PERFIL.configurado) mostrarPagina('config');
+  else renderPainel();
+  iniciarClimaRelogio();
+  iniciarTempoReal();
+
+  if (new URLSearchParams(location.search).get('mp') === 'conectado') {
+    history.replaceState(null, '', location.pathname);
+    mostrarPagina('barbeiros');
+    alert('Conta Mercado Pago conectada com sucesso!');
+  }
+})();
+</script>
+
+</body>
+</html>

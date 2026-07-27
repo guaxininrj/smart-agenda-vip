@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<script>if (location.hostname !== 'barberbook-smartlink.vercel.app') document.write('<base href="https://barberbook-smartlink.vercel.app/">');</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Agenda VIP — Entrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #0A0A0A;
+  --surface: #141414;
+  --surface-2: #1D1D1D;
+  --red: #FFFFFF;
+  --red-soft: #D8D8DC;
+  --silver: #C9CDD1;
+  --silver-soft: #EDEFF1;
+  --cream: #F2F2F2;
+  --muted: #8A8D91;
+  --border: rgba(255, 255, 255, 0.09);
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
+  --font-display: 'Oswald', sans-serif;
+  --font-body: 'Work Sans', sans-serif;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--cream); font-family: var(--font-body); -webkit-font-smoothing: antialiased; display: flex; align-items: center; justify-content: center; padding: 20px; }
+h1 { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin: 0; font-size: 22px; background: linear-gradient(90deg, var(--silver-soft), var(--red-soft)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stripe { height: 3px; width: 100%; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--red), var(--silver-soft), var(--red), transparent); opacity: 0.8; }
+.box { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); }
+.mark { width: 100px; height: 100px; margin: 0 auto 14px; display: block; filter: drop-shadow(0 4px 16px rgba(216, 31, 38, 0.35)); }
+.box > h1 { text-align: center; margin-bottom: 4px; }
+.sub { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+.tabs { display: flex; gap: 6px; background: var(--surface-2); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 20px; }
+.tab { flex: 1; text-align: center; padding: 8px; border-radius: 4px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.tab.active { background: var(--red); color: #000; }
+form { display: none; flex-direction: column; gap: 12px; }
+form.active { display: flex; }
+label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block; }
+input { width: 100%; background: var(--surface-2); border: 1px solid var(--border); color: var(--cream); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px; outline: none; font-family: var(--font-body); }
+input:focus { border-color: var(--red); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; border: none; cursor: pointer; background: var(--red); color: #000; margin-top: 6px; }
+.btn:hover { background: var(--red-soft); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.msg { font-size: 13px; padding: 10px 12px; border-radius: var(--radius-sm); display: none; }
+.msg.erro { display: block; background: rgba(216, 31, 38, 0.18); color: #FF9A9C; }
+.msg.ok { display: block; background: rgba(201, 205, 209, 0.15); color: var(--silver-soft); }
+</style>
+</head>
+<body>
+
+<div class="box">
+  <img class="mark" src="logo.png" alt="Smart Agenda VIP" />
+  <h1>Smart Agenda VIP</h1>
+  <p class="sub">Gestão completa para o seu negócio</p>
+  <div class="stripe" style="margin-bottom: 20px;"></div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="entrar">Entrar</div>
+    <div class="tab" data-tab="criar">Criar conta</div>
+  </div>
+
+  <div id="msg" class="msg"></div>
+
+  <form id="form-entrar" class="active">
+    <div>
+      <label>Telefone</label>
+      <input type="text" id="e-telefone" placeholder="21999990000" required autocomplete="username" />
+    </div>
+    <div>
+      <label>Senha</label>
+      <div style="position:relative;">
+        <input type="password" id="e-senha" required autocomplete="current-password" style="padding-right:38px;" />
+        <button type="button" class="btn-mostrar-senha" data-alvo="e-senha" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);margin:0;">👁</button>
+      </div>
+    </div>
+    <button class="btn" type="submit">Entrar</button>
+    <p style="text-align:center;margin-top:4px;"><a href="#" id="link-esqueci" style="color:var(--muted);font-size:12px;">Esqueci minha senha</a></p>
+  </form>
+
+  <form id="form-esqueci">
+    <p class="sub" style="margin-bottom:12px;">Digite seu telefone — vamos mandar um link no seu e-mail cadastrado pra você criar uma senha nova.</p>
+    <div>
+      <label>Telefone</label>
+      <input type="text" id="f-telefone" placeholder="21999990000" required autocomplete="username" />
+    </div>
+    <button class="btn" type="submit">Enviar link de redefinição</button>
+    <p style="text-align:center;margin-top:4px;"><a href="#" id="link-voltar-entrar" style="color:var(--muted);font-size:12px;">Voltar pro login</a></p>
+  </form>
+
+  <form id="form-nova-senha">
+    <p class="sub" style="margin-bottom:12px;">Escolha sua nova senha.</p>
+    <div>
+      <label>Nova senha</label>
+      <div style="position:relative;">
+        <input type="password" id="n-senha" required minlength="6" autocomplete="new-password" style="padding-right:38px;" />
+        <button type="button" class="btn-mostrar-senha" data-alvo="n-senha" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);margin:0;">👁</button>
+      </div>
+    </div>
+    <button class="btn" type="submit">Salvar nova senha</button>
+  </form>
+
+  <form id="form-criar">
+    <div>
+      <label>Nome do seu negócio</label>
+      <input type="text" id="c-nome" required />
+    </div>
+    <div>
+      <label>E-mail</label>
+      <input type="email" id="c-email" required autocomplete="username" />
+    </div>
+    <div>
+      <label>Telefone</label>
+      <input type="text" id="c-telefone" placeholder="21999990000" required />
+    </div>
+    <div>
+      <label>Senha</label>
+      <div style="position:relative;">
+        <input type="password" id="c-senha" required minlength="6" autocomplete="new-password" style="padding-right:38px;" />
+        <button type="button" class="btn-mostrar-senha" data-alvo="c-senha" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);margin:0;">👁</button>
+      </div>
+    </div>
+    <button class="btn" type="submit">Criar conta</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+function selecionarTab(nome) {
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === nome));
+  document.querySelectorAll('form').forEach((f) => f.classList.toggle('active', f.id === 'form-' + nome));
+  esconderMsg();
+}
+document.querySelectorAll('.tab').forEach((t) => {
+  t.addEventListener('click', () => selecionarTab(t.dataset.tab));
+});
+if (new URLSearchParams(location.search).get('cadastro') === '1') selecionarTab('criar');
+
+function mostrarMsg(texto, tipo) {
+  const el = document.getElementById('msg');
+  el.textContent = texto;
+  el.className = 'msg ' + tipo;
+}
+function esconderMsg() {
+  const el = document.getElementById('msg');
+  el.className = 'msg';
+}
+
+// não checamos mais "liberado" aqui pra decidir se deixa entrar — o
+// index.html já mostra a tela certa (painel normal ou "assinatura pausada"
+// com o botão de renovar), então tanto faz o motivo (nunca pagou, venceu,
+// foi pausado manualmente): sempre deixa entrar e quem decide a tela é lá.
+const ehLinkDeRecuperacao = location.hash.includes('type=recovery');
+
+(async () => {
+  if (ehLinkDeRecuperacao) return; // deixa o onAuthStateChange (PASSWORD_RECOVERY) cuidar disso
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return;
+  irPara('index.html');
+})();
+
+document.getElementById('form-entrar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  esconderMsg();
+  const botao = e.target.querySelector('button[type="submit"]');
+  const telefone = document.getElementById('e-telefone').value.trim();
+  const senha = document.getElementById('e-senha').value;
+
+  botao.disabled = true; botao.textContent = 'Entrando...';
+  const { data: email, error: erroTelefone } = await sb.rpc('obter_email_login', { p_telefone: telefone });
+  if (erroTelefone || !email) {
+    mostrarMsg('Telefone não encontrado.', 'erro');
+    botao.disabled = false; botao.textContent = 'Entrar';
+    return;
+  }
+
+  const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+  botao.disabled = false; botao.textContent = 'Entrar';
+  if (error) { mostrarMsg('Telefone ou senha incorretos.', 'erro'); return; }
+  irPara('index.html');
+});
+
+document.getElementById('link-esqueci').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active'));
+  document.querySelectorAll('form').forEach((f) => f.classList.toggle('active', f.id === 'form-esqueci'));
+  esconderMsg();
+});
+document.getElementById('link-voltar-entrar').addEventListener('click', (e) => {
+  e.preventDefault();
+  selecionarTab('entrar');
+});
+document.getElementById('form-esqueci').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  esconderMsg();
+  const telefone = document.getElementById('f-telefone').value.trim();
+  const { data: email, error: erroTelefone } = await sb.rpc('obter_email_login', { p_telefone: telefone });
+  if (erroTelefone || !email) { mostrarMsg('Telefone não encontrado.', 'erro'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/login.html' });
+  if (error) { mostrarMsg('Não foi possível enviar o link. Tente novamente.', 'erro'); return; }
+  mostrarMsg('Link enviado pro e-mail cadastrado nesse telefone. Confira sua caixa de entrada.', 'ok');
+  e.target.reset();
+});
+
+sb.auth.onAuthStateChange((evento) => {
+  if (evento === 'PASSWORD_RECOVERY') {
+    document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active'));
+    document.querySelectorAll('form').forEach((f) => f.classList.toggle('active', f.id === 'form-nova-senha'));
+    esconderMsg();
+  }
+});
+document.getElementById('form-nova-senha').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  esconderMsg();
+  const novaSenha = document.getElementById('n-senha').value;
+  const { error } = await sb.auth.updateUser({ password: novaSenha });
+  if (error) { mostrarMsg('Não foi possível salvar a senha nova. Tente de novo.', 'erro'); return; }
+  irPara('index.html');
+});
+
+document.querySelectorAll('.btn-mostrar-senha').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const campo = document.getElementById(btn.dataset.alvo);
+    const oculto = campo.type === 'password';
+    campo.type = oculto ? 'text' : 'password';
+    btn.textContent = oculto ? '🙈' : '👁';
+  });
+});
+
+document.getElementById('form-criar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  esconderMsg();
+  const nome_barbearia = document.getElementById('c-nome').value.trim();
+  const email = document.getElementById('c-email').value.trim();
+  const telefone = document.getElementById('c-telefone').value.trim();
+  const senha = document.getElementById('c-senha').value;
+  const { error } = await sb.auth.signUp({
+    email,
+    password: senha,
+    options: { data: { nome_barbearia, telefone } }
+  });
+  if (error) { mostrarMsg(error.message, 'erro'); return; }
+  await sb.auth.signOut();
+  e.target.reset();
+  mostrarMsg('Cadastro feito! Assim que confirmarmos o pagamento, liberamos seu acesso e avisamos por WhatsApp.', 'ok');
+});
+</script>
+
+</body>
+</html>

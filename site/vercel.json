@@ -1,0 +1,17 @@
+{
+  "crons": [
+    { "path": "/api/expirar-assinaturas", "schedule": "0 6 * * *" },
+    { "path": "/api/backup-diario", "schedule": "0 7 * * *" }
+  ],
+  "rewrites": [
+    { "source": "/:slug([a-z0-9-]+-[a-f0-9]{6})", "destination": "/agendar.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*).html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    }
+  ]
+}
