@@ -951,11 +951,14 @@ function desenharProdutosDaLoja(barbeiroId, modoDireto) {
     <button type="button" class="btn" style="margin-bottom:10px;" onclick="voltarListaLojas()">← Todas as lojas</button>
     <h3 style="margin-bottom:10px;">🏪 Loja do ${barbeiro ? barbeiro.nome : ''}</h3>
   `;
+  // PRODUTOS APENAS PARA VISUALIZAÇÃO - SEM BOTÕES DE COMPRA
+  // As vendas devem ser feitas EXCLUSIVAMENTE pelo painel do barbeiro
   const linhas = produtosDaLoja.length ? produtosDaLoja.map((p) => {
     return `
-      <div class="produto-item" style="cursor:default;">
+      <div class="produto-item" style="cursor:default;opacity:0.7;">
         <span class="nome">${p.nome}</span>
         <span class="preco">${fmtMoeda(p.preco)}</span>
+        <span style="color:var(--muted);font-size:11px;font-style:italic;">📋 Venda apenas via painel do barbeiro</span>
       </div>`;
   }).join('') : `<p style="color:var(--muted);">Nenhum produto disponível${modoDireto ? '' : ' nessa loja'}.</p>`;
   document.getElementById('lista-produtos').innerHTML = cabecalho + linhas;
