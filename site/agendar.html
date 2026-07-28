@@ -1028,13 +1028,10 @@ function desenharPlanosDoBarbeiro(barbeiroId, modoDireto) {
 }
 
 function alterarQtdCarrinho(produtoId, delta) {
-  const produto = PRODUTOS.find((p) => p.id === produtoId);
-  if (!produto) return;
-  const atual = CARRINHO[produtoId] || 0;
-  const novo = Math.max(0, Math.min(Number(produto.estoque), atual + delta));
-  if (novo === 0) delete CARRINHO[produtoId];
-  else CARRINHO[produtoId] = novo;
-  desenharProdutos();
+  // DESABILITADO: Produtos apenas para visualização no painel do cliente
+  // Vendas devem ser feitas exclusivamente pelo painel do barbeiro via comanda
+  alert('❌ Produtos estão apenas para visualização.\n\nAs vendas devem ser contabilizadas pelo painel do barbeiro via comanda.');
+  return;
 }
 
 function desenharCarrinhoBarra() {
