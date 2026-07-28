@@ -952,18 +952,10 @@ function desenharProdutosDaLoja(barbeiroId, modoDireto) {
     <h3 style="margin-bottom:10px;">🏪 Loja do ${barbeiro ? barbeiro.nome : ''}</h3>
   `;
   const linhas = produtosDaLoja.length ? produtosDaLoja.map((p) => {
-    const qtd = CARRINHO[p.id] || 0;
-    const semEstoque = Number(p.estoque) <= 0;
     return `
-      <div class="produto-item">
+      <div class="produto-item" style="cursor:default;">
         <span class="nome">${p.nome}</span>
         <span class="preco">${fmtMoeda(p.preco)}</span>
-        ${semEstoque ? '<span style="color:var(--muted);font-size:12px;">Esgotado</span>' : `
-          <div class="produto-qtd">
-            ${qtd > 0 ? `<button type="button" onclick="alterarQtdCarrinho('${p.id}', -1)">−</button><span>${qtd}</span>` : ''}
-            <button type="button" onclick="alterarQtdCarrinho('${p.id}', 1)" ${qtd >= Number(p.estoque) ? 'disabled' : ''}>+</button>
-          </div>
-        `}
       </div>`;
   }).join('') : `<p style="color:var(--muted);">Nenhum produto disponível${modoDireto ? '' : ' nessa loja'}.</p>`;
   document.getElementById('lista-produtos').innerHTML = cabecalho + linhas;
