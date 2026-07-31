@@ -137,6 +137,27 @@ label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-
 
 <div id="carregando" class="empty-state">Carregando...</div>
 
+<div id="tela-login" style="display:none;max-width:420px;margin:60px auto;padding:24px;">
+  <div class="card" style="text-align:center;">
+    <div id="login-logo-wrap" style="margin-bottom:14px;"></div>
+    <h2 id="login-loja-nome" style="margin-bottom:4px;">—</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Informe seu telefone para acessar</p>
+    <form id="form-login-cliente">
+      <div style="margin-bottom:12px;"><input type="tel" id="login-telefone" placeholder="21999990000" required style="text-align:center;font-size:16px;padding:14px;" /></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;">Entrar</button>
+    </form>
+    <div id="login-erro" style="color:#FF9A9C;font-size:13px;margin-top:10px;display:none;"></div>
+    <div id="login-cadastro" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:10px;">Primeira vez? Cadastre-se:</p>
+      <form id="form-cadastro-cliente">
+        <div style="margin-bottom:12px;"><input type="text" id="cadastro-nome-login" placeholder="Seu nome" required style="text-align:center;font-size:16px;padding:14px;" /></div>
+        <input type="hidden" id="cadastro-tel-login" />
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;">Cadastrar e entrar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="wrap" id="conteudo" style="display:none;">
   <div>
     <div class="card">
@@ -145,7 +166,7 @@ label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-
           <div id="loja-logo-wrap"></div>
           <div>
             <h1 id="loja-nome">—</h1>
-            <div class="loja-avaliacao"><span class="estrelas">★★★★★</span> · Barbearia</div>
+            <div class="loja-avaliacao"><span class="estrelas">★★★★★</span></div>
           </div>
         </div>
         <div class="loja-header-botoes">
@@ -166,6 +187,7 @@ label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-
         <h3 style="margin-bottom: 4px;">Profissionais</h3>
         <p style="color: var(--muted); font-size: 13px; margin-bottom: 10px;">Selecione um profissional para escolher os serviços e agendar.</p>
         <div id="lista-barbeiros"></div>
+        <div id="card-cliente-logado" style="display:none;margin-top:16px;"></div>
       </div>
       <div id="aba-conteudo-produtos" class="aba-conteudo" style="display:none;">
         <div id="lista-produtos"></div>
@@ -211,6 +233,7 @@ let CARRINHO = {};
 let TELA_ATUAL = null;
 let RESERVA = { barbeiro: null, servicos: [], data: null, hora: null };
 let INTERVALO_STATUS_PAGAMENTO = null;
+let CLIENTE_LOGADO = null;
 
 function obterSlug() {
   const params = new URLSearchParams(location.search);
@@ -230,7 +253,7 @@ async function iniciar() {
     document.getElementById('carregando').textContent = 'Barbearia não encontrada.';
     return;
   }
-  const { data: perfil } = await sb.from('perfis')
+  const { data: perfil } = await sbPublic.from('perfis')
     .select('id, nome_barbearia, telefone, endereco, logo_url, criado_em, slug, horarios, whatsapp, instagram, facebook, sobre, configurado')
     .eq('slug', slug).maybeSingle();
   if (!perfil) {
@@ -238,6 +261,10 @@ async function iniciar() {
     return;
   }
   LOJA = perfil;
+  try {
+    const { data: perfilTaxas } = await sbPublic.from('perfis').select('taxas_pagamento').eq('id', perfil.id).maybeSingle();
+    if (perfilTaxas && perfilTaxas.taxas_pagamento) LOJA.taxas_pagamento = perfilTaxas.taxas_pagamento;
+  } catch (e) {}
   document.title = `Agendar — ${LOJA.nome_barbearia}`;
   document.getElementById('topo-nome').textContent = LOJA.nome_barbearia;
   document.getElementById('loja-nome').textContent = LOJA.nome_barbearia;
@@ -255,8 +282,11 @@ async function iniciar() {
   const hojeDia = new Date().getDay().toString();
   document.getElementById('loja-horarios').innerHTML = DIAS_NOME.map((nome, i) => {
     const h = horarios[String(i)];
-    const texto = h && h.aberto ? `${h.inicio} - ${h.fim}` : 'Fechado';
-    return `<div class="info-linha ${String(i) === hojeDia ? 'hoje' : ''}"><span class="dia">${nome}</span><span>${texto}</span></div>`;
+    if (!h || !h.aberto) return `<div class="info-linha ${String(i) === hojeDia ? 'hoje' : ''}"><span class="dia">${nome}</span><span>Fechado</span></div>`;
+    const almoco = h.almoco_inicio && h.almoco_fim
+      ? `<div style="color:var(--verde-cl);font-size:11px;">Almoço: ${h.almoco_inicio} - ${h.almoco_fim}</div>`
+      : '';
+    return `<div class="info-linha ${String(i) === hojeDia ? 'hoje' : ''}"><span class="dia">${nome}</span><span>${h.inicio} - ${h.fim}${almoco}</span></div>`;
   }).join('');
 
   const contatos = [];
@@ -266,10 +296,10 @@ async function iniciar() {
   document.getElementById('loja-contatos').innerHTML = contatos.join('') || '<span style="color:var(--muted);font-size:13px;">Nenhum contato informado</span>';
 
   const [{ data: servicos }, { data: barbeiros }, { data: produtos }, { data: planos }] = await Promise.all([
-    sb.from('servicos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
-    sb.from('barbeiros').select('id,nome,foto_url,comissao_pct,mp_conectado').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
-    sb.from('produtos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
-    sb.from('planos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome')
+    sbPublic.from('servicos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
+    sbPublic.from('barbeiros').select('id,nome,foto_url,comissao_pct,mp_conectado').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
+    sbPublic.from('produtos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
+    sbPublic.from('planos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome')
   ]);
   SERVICOS = servicos || [];
   BARBEIROS = barbeiros || [];
@@ -293,7 +323,12 @@ async function iniciar() {
   desenharPlanos();
 
   document.getElementById('carregando').style.display = 'none';
-  document.getElementById('conteudo').style.display = 'grid';
+  document.getElementById('login-loja-nome').textContent = LOJA.nome_barbearia;
+  document.getElementById('login-logo-wrap').innerHTML = LOJA.logo_url
+    ? `<img src="${LOJA.logo_url}" alt="${LOJA.nome_barbearia}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto;" />`
+    : '';
+  document.getElementById('tela-login').style.display = 'block';
+  configurarLoginCliente();
   iniciarTempoRealPublico();
 
   const statusPago = new URLSearchParams(location.search).get('pago');
@@ -340,17 +375,170 @@ window.addEventListener('pageshow', (e) => {
   }
 });
 
+function configurarLoginCliente() {
+  document.getElementById('form-login-cliente').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const tel = document.getElementById('login-telefone').value.trim().replace(/\D/g, '');
+    if (!tel) return;
+    const erroEl = document.getElementById('login-erro');
+    erroEl.style.display = 'none';
+
+    const { data: rows } = await sb.rpc('buscar_cliente_por_telefone', { p_owner_id: LOJA.id, p_telefone: tel });
+    const cliente = rows && rows.length ? rows[0] : null;
+
+    if (cliente) {
+      await loginComCliente(cliente);
+    } else {
+      document.getElementById('cadastro-tel-login').value = tel;
+      document.getElementById('login-cadastro').style.display = 'block';
+      erroEl.textContent = 'Telefone não encontrado. Cadastre-se abaixo.';
+      erroEl.style.display = 'block';
+    }
+  });
+
+  document.getElementById('form-cadastro-cliente').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nome = document.getElementById('cadastro-nome-login').value.trim();
+    const tel = document.getElementById('cadastro-tel-login').value;
+    if (!nome || !tel) return;
+
+    const { data: clienteId, error } = await sb.rpc('obter_ou_criar_cliente', { p_owner_id: LOJA.id, p_nome: nome, p_telefone: tel });
+    if (error) { alert('Erro ao cadastrar. Tente novamente.'); return; }
+
+    await loginComCliente({ id: clienteId, nome, telefone: tel });
+  });
+}
+
+async function loginComCliente(cliente) {
+  CLIENTE_LOGADO = cliente;
+  CLIENTE_LOGADO.faltou = !!cliente.faltou;
+
+  const { count } = await sb.from('agendamentos')
+    .select('id', { count: 'exact', head: true })
+    .eq('owner_id', LOJA.id).eq('cliente_id', cliente.id).eq('status', 'concluido');
+  CLIENTE_LOGADO.totalCortes = count || 0;
+
+  CLIENTE_LOGADO.assinatura = null;
+  const { data: assinatura } = await sb.from('assinaturas')
+    .select('id, usos_no_ciclo, ciclo_inicio, status, planos(nome, limite_mensal)')
+    .eq('cliente_id', cliente.id).eq('status', 'ativo').maybeSingle();
+  if (assinatura) CLIENTE_LOGADO.assinatura = assinatura;
+
+  document.getElementById('tela-login').style.display = 'none';
+  document.getElementById('conteudo').style.display = 'grid';
+  renderCardCliente();
+}
+
+function renderCardCliente() {
+  const c = CLIENTE_LOGADO;
+  if (!c) return;
+
+  let planoHtml = '<span style="color:var(--muted);font-size:13px;">Sem plano ativo</span>';
+  if (c.assinatura) {
+    const a = c.assinatura;
+    const cicloInicio = new Date(a.ciclo_inicio + 'T00:00:00');
+    const cicloFim = new Date(cicloInicio.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const diasRestantes = Math.max(0, Math.round((cicloFim - hoje) / (1000 * 60 * 60 * 24)));
+    let corTag, bgTag;
+    if (diasRestantes >= 15) { corTag = '#22C55E'; bgTag = 'rgba(34,197,94,0.15)'; }
+    else if (diasRestantes >= 6) { corTag = '#F59E0B'; bgTag = 'rgba(245,158,11,0.15)'; }
+    else { corTag = '#FF4D4F'; bgTag = 'rgba(255,77,79,0.15)'; }
+    const usoTxt = a.planos.limite_mensal ? ` (${a.usos_no_ciclo}/${a.planos.limite_mensal})` : ' (ilimitado)';
+    planoHtml = `<span class="badge" style="color:${corTag};background:${bgTag};border:none;font-size:12px;">${a.planos.nome}${usoTxt}</span> <span style="color:${corTag};font-size:11px;font-weight:600;">${diasRestantes}d restantes</span>`;
+  }
+
+  const faltouHtml = c.faltou ? `
+    <div style="background:rgba(255,77,79,0.1);border:1px solid rgba(255,77,79,0.3);border-radius:8px;padding:10px 12px;margin-top:10px;">
+      <p style="color:#FF4D4F;font-size:13px;font-weight:600;margin:0;">⚠ Pagamento adiantado obrigatório</p>
+      <p style="color:#FF9A9C;font-size:12px;margin:4px 0 0;">Devido a uma falta anterior, seu próximo agendamento só pode ser feito com pagamento antecipado. Entre em contato com a barbearia.</p>
+    </div>
+  ` : '';
+
+  document.getElementById('card-cliente-logado').innerHTML = `
+    <div class="card" style="border-left:3px solid ${c.faltou ? '#FF4D4F' : 'var(--brass-soft)'};">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <h3 style="color:var(--cream);font-size:16px;margin-bottom:2px;">👤 ${c.nome}</h3>
+          <span style="color:var(--muted);font-size:12px;">${c.telefone}</span>
+        </div>
+        <button class="btn" style="font-size:11px;padding:4px 10px;" onclick="logoutCliente()">Trocar</button>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <span class="badge badge-brass" style="font-size:12px;">${c.totalCortes} corte(s)</span>
+        ${planoHtml}
+      </div>
+      ${faltouHtml}
+    </div>
+  `;
+  document.getElementById('card-cliente-logado').style.display = 'block';
+}
+
+function logoutCliente() {
+  CLIENTE_LOGADO = null;
+  document.getElementById('conteudo').style.display = 'none';
+  document.getElementById('card-cliente-logado').style.display = 'none';
+  document.getElementById('tela-login').style.display = 'block';
+  document.getElementById('login-telefone').value = '';
+  document.getElementById('login-cadastro').style.display = 'none';
+  document.getElementById('login-erro').style.display = 'none';
+}
+
 function passosHtml(ativo) {
-  const nomes = ['Serviço', 'Data', 'Horário', 'Confirmar'];
+  const nomes = ['Cadastro', 'Serviço', 'Data', 'Horário', 'Confirmar'];
   return `<div class="passos">${nomes.map((n, i) => `
     <div class="passo-bola ${i <= ativo ? 'ativo' : ''}">${i+1}</div>
-    ${i < 3 ? '<div class="passo-linha"></div>' : ''}
+    ${i < nomes.length - 1 ? '<div class="passo-linha"></div>' : ''}
   `).join('')}</div>`;
 }
 
 function abrirWizard(barbeiroId) {
-  RESERVA = { barbeiro: BARBEIROS.find((b) => b.id === barbeiroId), servicos: [], data: null, hora: null };
-  telaEscolherServico();
+  if (CLIENTE_LOGADO && CLIENTE_LOGADO.faltou) {
+    abrirModal(`
+      <div style="text-align:center;padding:10px 0;">
+        <div style="font-size:48px;margin-bottom:12px;">🚫</div>
+        <h2 style="color:#FF4D4F;">Agendamento bloqueado</h2>
+        <p style="color:var(--muted);font-size:14px;margin:12px 0;">Devido a uma falta anterior, seu próximo atendimento exige pagamento adiantado.</p>
+        <p style="color:var(--muted);font-size:13px;">Entre em contato com a barbearia para agendar com pagamento antecipado.</p>
+        <div class="modal-actions" style="margin-top:16px;">
+          <button type="button" class="btn" onclick="fecharModal()">Entendi</button>
+        </div>
+      </div>
+    `);
+    return;
+  }
+  const nome = CLIENTE_LOGADO ? CLIENTE_LOGADO.nome : '';
+  const tel = CLIENTE_LOGADO ? CLIENTE_LOGADO.telefone : '';
+  RESERVA = { barbeiro: BARBEIROS.find((b) => b.id === barbeiroId), servicos: [], data: null, hora: null, clienteNome: nome, clienteTelefone: tel };
+  if (CLIENTE_LOGADO) {
+    telaEscolherServico();
+  } else {
+    telaCadastro();
+  }
+}
+
+function telaCadastro() {
+  TELA_ATUAL = 'cadastro';
+  abrirModal(`
+    <h2>Seus dados</h2>
+    ${passosHtml(0)}
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">Informe seus dados para prosseguir com o agendamento.</p>
+    <form id="form-cadastro">
+      <div style="margin-bottom:12px;"><label>Seu nome</label><input type="text" id="cadastro-nome" value="${RESERVA.clienteNome}" required /></div>
+      <div style="margin-bottom:12px;"><label>WhatsApp</label><input type="text" id="cadastro-telefone" value="${RESERVA.clienteTelefone}" placeholder="21999990000" required /></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Continuar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-cadastro').addEventListener('submit', (e) => {
+    e.preventDefault();
+    RESERVA.clienteNome = document.getElementById('cadastro-nome').value.trim();
+    RESERVA.clienteTelefone = document.getElementById('cadastro-telefone').value.trim();
+    telaEscolherServico();
+  });
 }
 
 function telaEscolherServico() {
@@ -378,7 +566,7 @@ function telaEscolherServico() {
 
   abrirModal(`
     <h2>Escolha os serviços</h2>
-    ${passosHtml(0)}
+    ${passosHtml(1)}
     ${RESERVA.servicos.length ? `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
         <span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Serviços selecionados</span>
@@ -389,7 +577,7 @@ function telaEscolherServico() {
     ` : ''}
     <div>${disponiveisHtml || (SERVICOS.length ? '' : '<p style="color:var(--muted);">Nenhum serviço disponível.</p>')}</div>
     <div class="modal-actions">
-      <button type="button" class="btn" onclick="fecharModal()">Cancelar</button>
+      <button type="button" class="btn" onclick="CLIENTE_LOGADO ? fecharModal() : telaCadastro()">Voltar</button>
       <button type="button" class="btn btn-primary" onclick="avancarDeServicos()" ${RESERVA.servicos.length ? '' : 'disabled style="opacity:.5;"'}>Avançar</button>
     </div>
   `);
@@ -414,7 +602,7 @@ function telaEscolherData() {
   const hoje = new Date().toISOString().slice(0,10);
   abrirModal(`
     <h2>Escolha a data</h2>
-    ${passosHtml(1)}
+    ${passosHtml(3)}
     <label>Data</label>
     <input type="date" id="input-data-wizard" min="${hoje}" value="${RESERVA.data || hoje}" />
     <div class="modal-actions">
@@ -433,7 +621,7 @@ async function telaEscolherHorario() {
   TELA_ATUAL = 'horario';
   abrirModal(`
     <h2>Escolha o horário</h2>
-    ${passosHtml(2)}
+    ${passosHtml(3)}
     <p style="color:var(--muted);font-size:13px;margin-bottom:6px;">Carregando horários disponíveis...</p>
   `);
 
@@ -443,7 +631,7 @@ async function telaEscolherHorario() {
   if (!h || !h.aberto) {
     abrirModal(`
       <h2>Escolha o horário</h2>
-      ${passosHtml(2)}
+      ${passosHtml(3)}
       <p style="color:var(--muted);">A barbearia não abre nesse dia. Escolha outra data.</p>
       <div class="modal-actions">
         <button type="button" class="btn" onclick="telaEscolherData()">Voltar</button>
@@ -452,16 +640,21 @@ async function telaEscolherHorario() {
     return;
   }
 
-  const { data: ocupados } = await sb.from('horarios_ocupados').select('*')
-    .eq('owner_id', LOJA.id).eq('barbeiro_id', RESERVA.barbeiro.id)
-    .gte('data_hora', RESERVA.data + 'T00:00:00').lte('data_hora', RESERVA.data + 'T23:59:59');
+  const [{ data: ocupados }, { data: bloqueios }] = await Promise.all([
+    sb.from('horarios_ocupados').select('*')
+      .eq('owner_id', LOJA.id).eq('barbeiro_id', RESERVA.barbeiro.id)
+      .gte('data_hora', RESERVA.data + 'T00:00:00').lte('data_hora', RESERVA.data + 'T23:59:59'),
+    sb.from('bloqueios').select('*')
+      .eq('owner_id', LOJA.id).eq('data', RESERVA.data)
+      .or(`barbeiro_id.eq.${RESERVA.barbeiro.id},barbeiro_id.is.null`)
+  ]);
 
   const duracaoTotal = RESERVA.servicos.reduce((s, x) => s + x.duracao_min, 0);
-  const livres = gerarHorariosLivres(RESERVA.data, duracaoTotal, ocupados || [], h);
+  const livres = gerarHorariosLivres(RESERVA.data, duracaoTotal, ocupados || [], h, bloqueios || []);
 
   abrirModal(`
     <h2>Escolha o horário</h2>
-    ${passosHtml(2)}
+    ${passosHtml(3)}
     <p style="color:var(--muted);font-size:13px;margin-bottom:6px;">${new Date(RESERVA.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}</p>
     ${livres.length ? `<div class="slots-grid">${livres.map((hr) => `<button type="button" class="slot-btn" onclick="escolherHorario('${hr}', this)">${hr}</button>`).join('')}</div>` : '<p style="color:var(--muted);">Sem horários livres nesse dia.</p>'}
     <div class="modal-actions">
@@ -471,7 +664,7 @@ async function telaEscolherHorario() {
   `);
 }
 
-function gerarHorariosLivres(dataISO, duracaoMin, ocupados, horarioDia) {
+function gerarHorariosLivres(dataISO, duracaoMin, ocupados, horarioDia, bloqueios) {
   const [hIni, mIni] = horarioDia.inicio.split(':').map(Number);
   const [hFim, mFim] = horarioDia.fim.split(':').map(Number);
   const inicioMin = hIni * 60 + mIni;
@@ -481,12 +674,6 @@ function gerarHorariosLivres(dataISO, duracaoMin, ocupados, horarioDia) {
   const minutoAgora = agora.getHours() * 60 + agora.getMinutes();
   const livres = [];
 
-  // ocupados vem do banco tipo "2026-07-22T17:00:00+00:00" — os dígitos
-  // HH:MM já são o horário local da barbearia (mesma convenção usada no
-  // resto do app, ex: a Agenda só faz .slice(11,16) pra mostrar a hora).
-  // new Date(string sem fuso) assume o fuso do navegador e desalinha tudo
-  // em relação a esse valor gravado — por isso o cálculo aqui é todo em
-  // "minutos desde a meia-noite" a partir da string, sem usar Date.
   const ocupadosMin = ocupados
     .filter((o) => o.data_hora.slice(0, 10) === dataISO)
     .map((o) => {
@@ -494,11 +681,25 @@ function gerarHorariosLivres(dataISO, duracaoMin, ocupados, horarioDia) {
       return { inicio, fim: inicio + o.duracao_min };
     });
 
+  const bloqueiosMin = (bloqueios || []).map((b) => {
+    if (!b.hora_inicio) return { inicio: 0, fim: 24 * 60 };
+    const [bHi, bMi] = b.hora_inicio.split(':').map(Number);
+    const [bHf, bMf] = b.hora_fim.split(':').map(Number);
+    return { inicio: bHi * 60 + bMi, fim: bHf * 60 + bMf };
+  });
+
+  if (horarioDia.almoco_inicio && horarioDia.almoco_fim) {
+    const [aHi, aMi] = horarioDia.almoco_inicio.split(':').map(Number);
+    const [aHf, aMf] = horarioDia.almoco_fim.split(':').map(Number);
+    bloqueiosMin.push({ inicio: aHi * 60 + aMi, fim: aHf * 60 + aMf });
+  }
+
   for (let m = inicioMin; m + duracaoMin <= fimMin; m += duracaoMin) {
     if (ehHoje && m <= minutoAgora) continue;
     const fim = m + duracaoMin;
     const conflita = ocupadosMin.some((o) => m < o.fim && fim > o.inicio);
-    if (!conflita) {
+    const bloqueado = bloqueiosMin.some((b) => m < b.fim && fim > b.inicio);
+    if (!conflita && !bloqueado) {
       const hh = String(Math.floor(m / 60)).padStart(2, '0');
       const mm = String(m % 60).padStart(2, '0');
       livres.push(`${hh}:${mm}`);
@@ -523,29 +724,31 @@ function telaConfirmar() {
   const nomesServicos = RESERVA.servicos.map((s) => s.nome).join(' + ');
   const totalPreco = RESERVA.servicos.reduce((s, x) => s + Number(x.preco), 0);
   abrirModal(`
-    <h2>Seus dados</h2>
-    ${passosHtml(3)}
+    <h2>Confirmar agendamento</h2>
+    ${passosHtml(4)}
     <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:13px;">
       <div><strong>${nomesServicos}</strong> com ${RESERVA.barbeiro.nome}</div>
       <div style="color:var(--muted);">${new Date(RESERVA.data + 'T00:00:00').toLocaleDateString('pt-BR')} às ${RESERVA.hora} · ${fmtMoeda(totalPreco)}</div>
     </div>
-    <form id="form-cliente">
-      <div style="margin-bottom:12px;"><label>Seu nome</label><input type="text" id="cliente-nome" required /></div>
-      <div style="margin-bottom:12px;"><label>WhatsApp</label><input type="text" id="cliente-telefone" placeholder="21999990000" required /></div>
-      <div id="erro-reserva" style="color:#FF9A9C;font-size:13px;margin-bottom:10px;display:none;"></div>
-      <div class="modal-actions">
-        <button type="button" class="btn" onclick="telaEscolherHorario()">Voltar</button>
-        <button type="submit" class="btn btn-primary">Confirmar agendamento</button>
-      </div>
-    </form>
+    <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:13px;">
+      <div><strong>${RESERVA.clienteNome}</strong></div>
+      <div style="color:var(--muted);">WhatsApp: ${RESERVA.clienteTelefone}</div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">O pagamento será feito diretamente com o profissional.</p>
+    <div style="background:rgba(34,197,94,0.12);border:1px solid #22C55E;border-radius:8px;padding:12px;margin-bottom:12px;">
+      <p style="font-size:13px;color:#22C55E;font-weight:600;margin:0;">⚠️ Importante: em caso de não comparecimento, o valor do serviço será cobrado antecipadamente no próximo agendamento.</p>
+    </div>
+    <div id="erro-reserva" style="color:#FF9A9C;font-size:13px;margin-bottom:10px;display:none;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="telaEscolherHorario()">Voltar</button>
+      <button type="button" class="btn btn-primary" onclick="confirmarReserva()">Confirmar agendamento</button>
+    </div>
   `);
-  document.getElementById('form-cliente').addEventListener('submit', confirmarReserva);
 }
 
-async function confirmarReserva(e) {
-  e.preventDefault();
-  const nome = document.getElementById('cliente-nome').value.trim();
-  const telefone = document.getElementById('cliente-telefone').value.trim();
+async function confirmarReserva() {
+  const nome = RESERVA.clienteNome;
+  const telefone = RESERVA.clienteTelefone;
   const erroBox = document.getElementById('erro-reserva');
   erroBox.style.display = 'none';
 
@@ -596,9 +799,18 @@ async function confirmarReserva(e) {
       <div><strong>${nomesServicos}</strong> com ${RESERVA.barbeiro.nome}</div>
       <div style="color:var(--muted);">${new Date(RESERVA.data + 'T00:00:00').toLocaleDateString('pt-BR')} às ${RESERVA.hora} · ${fmtMoeda(totalPreco)}</div>
     </div>
-    <div id="area-pagamento">${formasPagamentoHtml(agendamentoId, RESERVA.barbeiro.mp_conectado)}</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">O pagamento será feito diretamente com o profissional.</p>
+    <div style="background:rgba(34,197,94,0.12);border:1px solid #22C55E;border-radius:8px;padding:12px;margin-bottom:12px;">
+      <p style="font-size:13px;color:#22C55E;font-weight:600;margin:0;">⚠️ Importante: em caso de não comparecimento, o valor do serviço será cobrado antecipadamente no próximo agendamento.</p>
+    </div>
     <button type="button" class="btn btn-primary" style="width:100%;" onclick="fecharModal()">Fechar</button>
   `);
+}
+
+function taxaLabel(metodo) {
+  const taxas = LOJA.taxas_pagamento || {};
+  const pct = Number(taxas[metodo] || 0);
+  return pct > 0 ? `<span style="font-size:10px;color:var(--muted);display:block;">+${pct}% taxa</span>` : '';
 }
 
 function formasPagamentoHtml(agendamentoId, mpConectado) {
@@ -614,11 +826,11 @@ function formasPagamentoHtml(agendamentoId, mpConectado) {
       ${mpConectado ? `
         <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'cartao', this)">
           <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span>
-          <span>Crédito</span>
+          <span>Crédito${taxaLabel('credito')}</span>
         </button>
-        <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'cartao', this)">
+        <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'debito', this)">
           <span class="forma-icone" style="background:rgba(168,85,247,0.15);color:#A855F7;">💳</span>
-          <span>Débito</span>
+          <span>Débito${taxaLabel('debito')}</span>
         </button>
       ` : ''}
       <button type="button" class="forma-pagamento" onclick="escolherPagamentoDinheiro('${agendamentoId}', this)">
@@ -628,7 +840,7 @@ function formasPagamentoHtml(agendamentoId, mpConectado) {
       ${mpConectado ? `
         <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'pix', this)">
           <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
-          <span>Pix</span>
+          <span>Pix${taxaLabel('pix')}</span>
         </button>
       ` : ''}
     </div>
@@ -684,7 +896,7 @@ async function escolherPagamento(agendamentoId, metodo, botao) {
       return;
     }
 
-    if (metodo === 'cartao') {
+    if (metodo === 'cartao' || metodo === 'debito') {
       location.href = dados.link_pagamento;
       return;
     }
@@ -772,6 +984,7 @@ async function confirmarClientePlano(e, planoId) {
     <h2>${plano.nome}</h2>
     <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">${fmtMoeda(plano.preco)}/mês</p>
     <div id="area-pagamento-plano">${formasPagamentoPlanoHtml(planoId, clienteId)}</div>
+    <button type="button" class="btn" style="width:100%;margin-top:12px;" onclick="fecharModal()">Fechar</button>
   `);
 }
 
@@ -782,6 +995,10 @@ function formasPagamentoPlanoHtml(planoId, clienteId) {
       <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlano('${planoId}', '${clienteId}', 'cartao', this)">
         <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span>
         <span>Cartão</span>
+      </button>
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlanoDinheiro('${planoId}', '${clienteId}', this)">
+        <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span>
+        <span>Dinheiro</span>
       </button>
       <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlano('${planoId}', '${clienteId}', 'pix', this)">
         <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
@@ -794,6 +1011,31 @@ function formasPagamentoPlanoHtml(planoId, clienteId) {
 function voltarFormasPagamentoPlano(planoId, clienteId) {
   if (INTERVALO_STATUS_PAGAMENTO) { clearInterval(INTERVALO_STATUS_PAGAMENTO); INTERVALO_STATUS_PAGAMENTO = null; }
   document.getElementById('area-pagamento-plano').innerHTML = formasPagamentoPlanoHtml(planoId, clienteId);
+}
+
+async function escolherPagamentoPlanoDinheiro(planoId, clienteId, botao) {
+  const area = document.getElementById('area-pagamento-plano');
+  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plano_id: planoId, cliente_id: clienteId, metodo: 'dinheiro' })
+    });
+    const dados = await resp.json();
+    if (!resp.ok) {
+      alert(dados.erro || 'Não foi possível registrar.');
+      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+      return;
+    }
+    area.innerHTML = `
+      <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:10px;">✅ Combinado! Pague direto na barbearia.</p>
+      <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamentoPlano('${planoId}', '${clienteId}')">← Trocar forma de pagamento</button>
+    `;
+  } catch (e) {
+    alert('Erro ao registrar. Tente novamente.');
+    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+  }
 }
 
 async function escolherPagamentoPlano(planoId, clienteId, metodo, botao) {
@@ -812,7 +1054,7 @@ async function escolherPagamentoPlano(planoId, clienteId, metodo, botao) {
       return;
     }
 
-    if (metodo === 'cartao') {
+    if (metodo === 'cartao' || metodo === 'debito') {
       location.href = dados.link_pagamento;
       return;
     }
@@ -956,10 +1198,9 @@ function desenharProdutosDaLoja(barbeiroId, modoDireto) {
   // As vendas devem ser feitas EXCLUSIVAMENTE pelo painel do barbeiro
   const linhas = produtosDaLoja.length ? produtosDaLoja.map((p) => {
     return `
-      <div class="produto-item" style="cursor:default;opacity:0.7;">
+      <div class="produto-item" style="cursor:default;">
         <span class="nome">${p.nome}</span>
         <span class="preco">${fmtMoeda(p.preco)}</span>
-        <span style="color:var(--muted);font-size:11px;font-style:italic;">📋 Venda apenas via painel do barbeiro</span>
       </div>`;
   }).join('') : `<p style="color:var(--muted);">Nenhum produto disponível${modoDireto ? '' : ' nessa loja'}.</p>`;
   document.getElementById('lista-produtos').innerHTML = cabecalho + linhas;
@@ -1016,18 +1257,24 @@ function desenharPlanosDoBarbeiro(barbeiroId, modoDireto) {
     <button type="button" class="btn" style="margin-bottom:10px;" onclick="voltarListaBarbeirosPlanos()">← Todos os barbeiros</button>
     <h3 style="margin-bottom:10px;">🎟️ Planos do ${barbeiro ? barbeiro.nome : ''}</h3>
   `;
-  const linhas = planosDoBarbeiro.length ? planosDoBarbeiro.map((p) => `
-    <div class="plano-card-cliente">
+  const zapBarbearia = LOJA.whatsapp ? LOJA.whatsapp.replace(/\D/g, '') : (LOJA.telefone ? LOJA.telefone.replace(/\D/g, '') : '');
+  const linhas = planosDoBarbeiro.length ? planosDoBarbeiro.map((p) => {
+    const corPlano = p.cor || 'var(--brass-soft)';
+    const msgZap = encodeURIComponent(`Olá! Tenho interesse no plano *${p.nome}* (${fmtMoeda(p.preco)}/mês). Gostaria de assinar!`);
+    const linkZap = zapBarbearia ? `https://wa.me/55${zapBarbearia}?text=${msgZap}` : '';
+    return `
+    <div class="plano-card-cliente" style="border-left:4px solid ${corPlano};">
       <div class="topo">
-        <h3 style="color:var(--cream);font-size:16px;">${p.nome}${p.badge ? `<span class="plano-badge">${p.badge}</span>` : ''}</h3>
+        <h3 style="color:${corPlano};font-size:16px;">${p.nome}${p.badge ? `<span class="plano-badge">${p.badge}</span>` : ''}</h3>
       </div>
       ${p.descricao ? `<p class="plano-desc">${p.descricao}</p>` : ''}
       <div class="plano-inclusos">${(p.servicos_inclusos||[]).map((s) => `<span>${s}</span>`).join('')}</div>
       <div class="plano-rodape">
-        <span class="plano-preco">${fmtMoeda(p.preco)}<span>/mês</span></span>
-        <button type="button" class="btn btn-primary" onclick="abrirModalPlano('${p.id}')">Quero esse plano</button>
+        <span class="plano-preco" style="color:${corPlano};">${fmtMoeda(p.preco)}<span>/mês</span></span>
+        ${linkZap ? `<a href="${linkZap}" target="_blank" rel="noopener" class="btn" style="background:#25D366;color:#fff;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">📲 Quero esse plano</a>` : ''}
       </div>
-    </div>`).join('') : `<p style="color:var(--muted);">Nenhum plano disponível${modoDireto ? '' : ' desse barbeiro'}.</p>`;
+    </div>`;
+  }).join('') : `<p style="color:var(--muted);">Nenhum plano disponível${modoDireto ? '' : ' desse barbeiro'}.</p>`;
   document.getElementById('lista-planos').innerHTML = cabecalho + linhas;
 }
 
@@ -1168,7 +1415,7 @@ async function escolherPagamentoCarrinho(clienteId, metodo, botao) {
       return;
     }
 
-    if (metodo === 'cartao') {
+    if (metodo === 'cartao' || metodo === 'debito') {
       location.href = dados.link_pagamento;
       return;
     }
@@ -1225,12 +1472,12 @@ function iniciarTempoRealPublico() {
     if (TELA_ATUAL === 'horario' && RESERVA && RESERVA.data) telaEscolherHorario();
   });
   canal.on('postgres_changes', { event: '*', schema: 'public', table: 'produtos', filter: `owner_id=eq.${LOJA.id}` }, async () => {
-    const { data } = await sb.from('produtos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome');
+    const { data } = await sbPublic.from('produtos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome');
     PRODUTOS = data || [];
     desenharProdutos();
   });
   canal.on('postgres_changes', { event: '*', schema: 'public', table: 'planos', filter: `owner_id=eq.${LOJA.id}` }, async () => {
-    const { data } = await sb.from('planos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome');
+    const { data } = await sbPublic.from('planos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome');
     PLANOS = data || [];
     desenharPlanos();
   });

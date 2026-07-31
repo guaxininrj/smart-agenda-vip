@@ -7,9 +7,13 @@
 <title>Smart Agenda VIP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
 :root {
+  /* avisa o navegador que a interface é escura: sem isso ele desenha os
+     controles nativos (ícone de relógio do type=time, calendário do
+     type=date) em preto sobre fundo preto, e eles somem da tela */
+  color-scheme: dark;
   --bg: #060607;
   --surface: #0E0E10;
   --surface-2: #141417;
@@ -23,7 +27,7 @@
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   --font-display: 'Oswald', sans-serif;
   --font-body: 'Work Sans', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-mono: 'IBM Plex Mono', monospace;
   --radius: 10px;
   --radius-sm: 6px;
 }
@@ -178,17 +182,26 @@ tr:last-child td { border-bottom: none; }
     </div>
     <ul class="nav-list" id="nav-list">
       <li class="nav-item active" data-page="painel">Painel</li>
+      <li class="nav-item" data-page="fila">Fila</li>
+      <li class="nav-item" data-page="comanda-aberta">Comanda</li>
       <li class="nav-item" data-page="agenda">Agenda</li>
       <li class="nav-item" data-page="clientes">Clientes</li>
       <li class="nav-item" data-page="servicos">Serviços</li>
       <li class="nav-item" data-page="produtos">Produtos</li>
       <li class="nav-item" data-page="planos">Planos</li>
       <li class="nav-item" data-page="barbeiros">Barbeiros</li>
+      <li class="nav-item" data-page="assinaturas">Assinaturas</li>
       <li class="nav-item" data-page="financeiro">Financeiro</li>
       <li class="nav-item" data-page="config">Configurações</li>
     </ul>
     <button class="btn btn-primary" id="btn-renovar-plano" style="width: 100%;" onclick="abrirModalRenovarPlano()">Renovar plano</button>
     <a href="https://wa.me/5521994564209" target="_blank" rel="noopener" class="btn btn-ghost" style="width: 100%; margin-top: 8px; text-align: center; text-decoration: none; display: block; box-sizing: border-box;">💬 Suporte</a>
+    <div id="sidebar-trial" style="display:none;margin-top:12px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.1));border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-sm);padding:14px 12px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:6px;">🎁</div>
+      <div style="font-size:13px;font-weight:600;color:#F59E0B;margin-bottom:4px;" id="sidebar-trial-titulo">Plano Bronze gratis</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;" id="sidebar-trial-dias"></div>
+      <button class="btn btn-primary" style="width:100%;font-size:12px;padding:6px 12px;" onclick="abrirModalRenovarPlano()">Assinar agora</button>
+    </div>
     <div style="margin-top: auto;">
       <div class="barber-stripe thin" style="margin-bottom: 16px;"></div>
       <button class="btn btn-ghost" id="btn-sair" style="width: 100%;">Sair</button>
@@ -206,13 +219,84 @@ tr:last-child td { border-bottom: none; }
       <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
       <div id="onboarding-checklist" style="display:none;"></div>
       <div class="grid grid-4" style="margin-bottom: 24px;">
-        <div class="card stat-card"><span class="value" id="p-agendamentos-hoje">0</span><span class="label">Agendamentos hoje</span></div>
+        <div class="card stat-card" style="background:linear-gradient(135deg,#1a2a4a,#223366);border:1px solid rgba(59,130,246,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">📅</div>
+            <span class="label" style="color:rgba(147,197,253,0.9);">Agendamentos Hoje</span>
+          </div>
+          <span class="value" id="p-agendamentos-hoje" style="color:#93C5FD;">0</span>
+        </div>
+        <div class="card stat-card" style="background:linear-gradient(135deg,#1a3a2a,#1e4d3a);border:1px solid rgba(34,197,94,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(34,197,94,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">👥</div>
+            <span class="label" style="color:rgba(134,239,172,0.9);">Clientes Ativos</span>
+          </div>
+          <span class="value" id="p-clientes-ativos" style="color:#86EFAC;">0</span>
+        </div>
+        <div class="card stat-card" style="background:linear-gradient(135deg,#2a1a3a,#3d2066);border:1px solid rgba(168,85,247,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(168,85,247,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">✂️</div>
+            <span class="label" style="color:rgba(216,180,254,0.9);">Profissionais</span>
+          </div>
+          <span class="value" id="p-profissionais" style="color:#D8B4FE;">0</span>
+        </div>
+        <div class="card stat-card" style="background:linear-gradient(135deg,#3a2a1a,#4d3d1e);border:1px solid rgba(250,204,21,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(250,204,21,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">🛠️</div>
+            <span class="label" style="color:rgba(253,224,71,0.9);">Serviços</span>
+          </div>
+          <span class="value" id="p-servicos-total" style="color:#FDE047;">0</span>
+        </div>
+      </div>
+      <div class="grid grid-3" style="margin-bottom: 24px;">
         <div class="card stat-card"><span class="value" id="p-concluidos-hoje">0</span><span class="label">Cortes concluídos</span></div>
-        <div class="card stat-card"><span class="value" id="p-faturado-hoje">R$ 0,00</span><span class="label">Faturado hoje</span></div>
-        <div class="card stat-card"><span class="value" id="p-saldo-hoje">R$ 0,00</span><span class="label">Saldo do caixa hoje</span></div>
+      </div>
+      <div class="grid grid-3" style="margin-bottom: 24px;">
+        <div class="card stat-card" style="background:linear-gradient(135deg,#1a3a2a,#1e4d3a);border:1px solid rgba(34,197,94,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(34,197,94,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">💰</div>
+            <span class="label" style="color:rgba(134,239,172,0.9);">Entradas hoje</span>
+          </div>
+          <span class="value" id="p-entradas-hoje" style="color:#86EFAC;">R$ 0,00</span>
+        </div>
+        <div class="card stat-card" style="background:linear-gradient(135deg,#3a1a1a,#4d1e1e);border:1px solid rgba(239,68,68,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">📉</div>
+            <span class="label" style="color:rgba(252,165,165,0.9);">Saídas hoje</span>
+          </div>
+          <span class="value" id="p-saidas-hoje" style="color:#FCA5A5;">R$ 0,00</span>
+        </div>
+        <div class="card stat-card" style="background:linear-gradient(135deg,#1a2a1a,#1e4d2e);border:1px solid rgba(74,222,128,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(74,222,128,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">💎</div>
+            <span class="label" style="color:rgba(134,239,172,0.9);">Saldo líquido hoje</span>
+          </div>
+          <span class="value" id="p-saldo-hoje" style="color:#86EFAC;">R$ 0,00</span>
+        </div>
       </div>
       <p class="eyebrow" style="margin-bottom: 10px;">Agenda de hoje por barbeiro</p>
       <div class="grid grid-2" id="p-por-barbeiro"></div>
+    </section>
+
+    <!-- FILA -->
+    <section class="page" id="fila">
+      <div class="page-header">
+        <div><span class="eyebrow">Ordem de atendimento</span><h1>Fila do dia</h1></div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="date" id="input-data-fila" onchange="renderFila()" style="max-width:180px;" />
+        </div>
+      </div>
+      <div class="card" style="overflow-x:auto;">
+        <div id="corpo-fila"></div>
+      </div>
+    </section>
+
+    <!-- COMANDA ABERTA -->
+    <section class="page" id="comanda-aberta">
+      <div class="page-header">
+        <div><span class="eyebrow">Atendimento em andamento</span><h1>Comanda Aberta</h1></div>
+      </div>
+      <div id="corpo-comanda-aberta"></div>
     </section>
 
     <!-- AGENDA -->
@@ -315,6 +399,17 @@ tr:last-child td { border-bottom: none; }
       </div>
     </section>
 
+    <!-- ASSINATURAS -->
+    <section class="page" id="assinaturas">
+      <div class="page-header">
+        <div><span class="eyebrow">Painel de Assinaturas</span><h1>Assinaturas</h1></div>
+        <button class="btn btn-primary" onclick="abrirModalNovaAssinatura()">+ Nova assinatura</button>
+      </div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Acompanhe todas as assinaturas ativas, vencimentos próximos e oportunidades de reativação.</p>
+      <div id="assinaturas-cards"></div>
+      <div id="assinaturas-lista" style="margin-top:24px;"></div>
+    </section>
+
     <!-- FINANCEIRO -->
     <section class="page" id="financeiro">
       <div class="page-header">
@@ -327,9 +422,36 @@ tr:last-child td { border-bottom: none; }
       </div>
       <div class="barber-stripe thin" style="margin-bottom: 24px;"></div>
       <div class="grid grid-3" style="margin-bottom: 24px;">
-        <div class="card stat-card"><span class="value" id="f-entradas" style="color: #7FE0A7;">R$ 0,00</span><span class="label">Entradas</span></div>
-        <div class="card stat-card"><span class="value" id="f-saidas" style="color: #FF9A9C;">R$ 0,00</span><span class="label">Saídas</span></div>
-        <div class="card stat-card"><span class="value" id="f-saldo">R$ 0,00</span><span class="label">Saldo</span></div>
+        <div class="card stat-card"><span class="value" id="f-entradas" style="color: #7FE0A7;">R$ 0,00</span><span class="label">Entradas do mês</span></div>
+        <div class="card stat-card"><span class="value" id="f-saidas" style="color: #FF9A9C;">R$ 0,00</span><span class="label">Saídas do mês</span></div>
+        <div class="card stat-card"><span class="value" id="f-saldo">R$ 0,00</span><span class="label">Saldo do mês</span></div>
+        <div class="card stat-card"><span class="value" id="f-cortes-mes" style="color: #7DD3FC;">0</span><span class="label">Cortes no mês</span></div>
+      </div>
+      <div class="grid grid-3" style="margin-bottom: 24px;">
+        <div class="card stat-card" style="background:linear-gradient(135deg,#1a2a3a,#1e3d4d);border:1px solid rgba(14,165,233,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(14,165,233,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">📊</div>
+            <span class="label" style="color:rgba(125,211,252,0.9);">Faturamento da semana</span>
+          </div>
+          <span class="value" id="f-fat-semana" style="color:#7DD3FC;">R$ 0,00</span>
+        </div>
+        <div class="card stat-card" style="background:linear-gradient(135deg,#3a2a1a,#4d2e1e);border:1px solid rgba(249,115,22,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(249,115,22,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">📉</div>
+            <span class="label" style="color:rgba(253,186,116,0.9);">Saídas da semana</span>
+          </div>
+          <span class="value" id="f-saidas-semana" style="color:#FDBA74;">R$ 0,00</span>
+        </div>
+        <div class="card stat-card" style="background:linear-gradient(135deg,#1a2a1a,#1e4d2e);border:1px solid rgba(74,222,128,0.25);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(74,222,128,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">💎</div>
+            <span class="label" style="color:rgba(134,239,172,0.9);">Saldo da semana</span>
+          </div>
+          <span class="value" id="f-saldo-semana" style="color:#86EFAC;">R$ 0,00</span>
+        </div>
+      </div>
+      <div class="grid grid-2" style="margin-bottom:24px;align-items:start;">
+        <div class="card" id="f-grafico-entradas-saidas"></div>
       </div>
       <div class="card">
         <table class="tabela-responsiva">
@@ -376,11 +498,28 @@ tr:last-child td { border-bottom: none; }
         </div>
         <div><label>Sobre a barbearia</label><textarea id="config-sobre" rows="3" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--cream);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:var(--font-body);"></textarea></div>
 
+        <h3 style="margin-top: 6px;">Taxas por forma de pagamento</h3>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 10px;">O percentual é acrescido automaticamente no valor cobrado do cliente. Deixe 0 para não cobrar taxa.</p>
+        <div class="grid grid-3" style="gap:10px;">
+          <div><label>💳 Crédito (%)</label><input type="number" step="0.1" min="0" max="100" id="config-taxa-credito" value="0" /></div>
+          <div><label>💳 Débito (%)</label><input type="number" step="0.1" min="0" max="100" id="config-taxa-debito" value="0" /></div>
+          <div><label>◈ Pix (%)</label><input type="number" step="0.1" min="0" max="100" id="config-taxa-pix" value="0" /></div>
+        </div>
+
         <h3 style="margin-top: 6px;">Horário de funcionamento</h3>
         <div id="config-horarios" style="display: flex; flex-direction: column; gap: 8px;"></div>
 
         <button class="btn btn-primary" type="submit" style="align-self: flex-start;">Salvar configurações</button>
       </form>
+
+      <div class="card" style="margin-top: 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px;">
+          <h3>Folgas e bloqueios</h3>
+          <button class="btn btn-primary" type="button" onclick="abrirModalNovoBloqueio()">+ Bloquear data</button>
+        </div>
+        <p style="color: var(--muted); font-size: 13px; margin: 0 0 14px;">Feriado, folga, almoço mais cedo, sair antes. O horário bloqueado some da agenda pública e ninguém consegue marcar nele.</p>
+        <div id="lista-bloqueios"></div>
+      </div>
 
       <div class="card" style="margin-top: 16px; border-color: rgba(255,30,45,.4);">
         <h3 style="margin-bottom: 6px;">Cancelar assinatura</h3>
@@ -394,6 +533,18 @@ tr:last-child td { border-bottom: none; }
 
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal" id="modal-box"></div>
+</div>
+
+
+<div id="tela-trial-expirado" style="display:none;position:fixed;inset:0;background:var(--bg,#0A0A0A);z-index:200;align-items:center;justify-content:center;padding:20px;">
+  <div class="card" style="max-width:420px;text-align:center;padding:32px;">
+    <div style="font-size:48px;margin-bottom:12px;">⏰</div>
+    <h1 style="margin-bottom:10px;">Seu Plano Bronze gratuito expirou</h1>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px;">Seus 7 dias gratuitos do Plano Bronze acabaram, mas seus dados continuam salvos. Escolha um plano para continuar usando o Smart Agenda VIP.</p>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:12px;" onclick="abrirModalRenovarPlano()">Escolher um plano</button>
+    <a href="https://wa.me/5521994564209" target="_blank" rel="noopener" class="btn btn-ghost" style="width:100%;text-decoration:none;display:block;box-sizing:border-box;margin-bottom:12px;">💬 Falar com o suporte</a>
+    <button class="btn btn-ghost" style="width:100%;" onclick="sb.auth.signOut().then(() => irPara('login.html'))">Sair</button>
+  </div>
 </div>
 
 <div id="tela-pausado" style="display:none;position:fixed;inset:0;background:var(--bg,#0A0A0A);z-index:200;align-items:center;justify-content:center;padding:20px;">
@@ -515,6 +666,10 @@ async function carregarPerfil() {
     sb.rpc('minha_assinatura_plataforma').single()
   ]);
   PERFIL = data ? { ...data, ...(assinatura || {}) } : null;
+  try {
+    const { data: tp } = await sb.from('perfis').select('taxas_pagamento').eq('id', UID).maybeSingle();
+    if (tp && PERFIL) PERFIL.taxas_pagamento = tp.taxas_pagamento || {};
+  } catch (e) {}
   document.getElementById('nome-barbearia').textContent = data ? data.nome_barbearia : 'Smart Agenda VIP';
   document.getElementById('nome-barbearia-mobile').textContent = data ? data.nome_barbearia : 'Smart Agenda VIP';
   document.getElementById('logo-barbearia').src = (data && data.logo_url) ? data.logo_url : 'logo.png';
@@ -550,14 +705,24 @@ async function carregarTagPlanoPlataforma() {
     const hoje = new Date(agoraComoDigitosLocais().slice(0, 10) + 'T00:00:00');
     const vencimento = new Date(PERFIL.assinatura_vencimento + 'T00:00:00');
     const dias = Math.round((vencimento - hoje) / (1000 * 60 * 60 * 24));
-    const texto = dias < 0 ? 'vencido' : dias === 0 ? 'vence hoje' : `${dias}d p/ renovar`;
-    const cor = dias <= 3 ? '#FF9A9C' : 'var(--muted)';
-    vencDesktop.textContent = texto;
-    vencDesktop.style.color = cor;
-    vencDesktop.style.display = 'inline-block';
-    vencMobile.textContent = texto;
-    vencMobile.style.color = cor;
-    vencMobile.style.display = 'inline-block';
+
+    let tagCor, tagBg;
+    if (dias >= 15) { tagCor = '#22C55E'; tagBg = 'rgba(34,197,94,0.15)'; }
+    else if (dias >= 6) { tagCor = '#F59E0B'; tagBg = 'rgba(245,158,11,0.15)'; }
+    else { tagCor = '#FF4D4F'; tagBg = 'rgba(255,77,79,0.15)'; }
+
+    [tagDesktop, tagMobile].forEach((el) => {
+      el.style.color = tagCor;
+      el.style.background = tagBg;
+      el.style.border = 'none';
+    });
+
+    const textoContador = dias < 0 ? 'vencido' : dias === 0 ? 'vence hoje' : `${dias}d restantes`;
+    [vencDesktop, vencMobile].forEach((el) => {
+      el.textContent = textoContador;
+      el.style.color = tagCor;
+      el.style.display = 'inline-block';
+    });
   } else {
     vencDesktop.style.display = 'none';
     vencMobile.style.display = 'none';
@@ -657,26 +822,178 @@ function renderConfig() {
   document.getElementById('config-facebook').value = PERFIL.facebook || '';
   document.getElementById('config-sobre').value = PERFIL.sobre || '';
 
+  const taxas = PERFIL.taxas_pagamento || {};
+  document.getElementById('config-taxa-credito').value = taxas.credito || 0;
+  document.getElementById('config-taxa-debito').value = taxas.debito || 0;
+  document.getElementById('config-taxa-pix').value = taxas.pix || 0;
+
   const horarios = PERFIL.horarios || {};
   document.getElementById('config-horarios').innerHTML = DIAS.map((d) => {
     const h = horarios[d.chave] || { aberto: false, inicio: '09:00', fim: '19:00' };
     return `
-      <div style="display:flex;align-items:center;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--border);">
         <label style="display:flex;align-items:center;gap:6px;width:110px;margin:0;text-transform:none;color:var(--cream);font-size:14px;">
           <input type="checkbox" data-dia="${d.chave}" class="chk-aberto" ${h.aberto ? 'checked' : ''} style="width:auto;" /> ${d.nome}
         </label>
-        <input type="time" data-dia="${d.chave}" class="hr-inicio" value="${h.inicio || '09:00'}" ${h.aberto ? '' : 'disabled'} />
+        <input type="time" data-dia="${d.chave}" class="hr-inicio" value="${h.inicio || '09:00'}" ${h.aberto ? '' : 'disabled'} style="width:auto;flex:1;min-width:110px;" />
         <span style="color:var(--muted);">até</span>
-        <input type="time" data-dia="${d.chave}" class="hr-fim" value="${h.fim || '19:00'}" ${h.aberto ? '' : 'disabled'} />
+        <input type="time" data-dia="${d.chave}" class="hr-fim" value="${h.fim || '19:00'}" ${h.aberto ? '' : 'disabled'} style="width:auto;flex:1;min-width:110px;" />
+        <span style="color:var(--muted);font-size:13px;margin-left:6px;">almoço</span>
+        <input type="time" data-dia="${d.chave}" class="hr-almoco-inicio" value="${h.almoco_inicio || ''}" ${h.aberto ? '' : 'disabled'} style="width:auto;min-width:100px;" />
+        <span style="color:var(--muted);font-size:13px;">às</span>
+        <input type="time" data-dia="${d.chave}" class="hr-almoco-fim" value="${h.almoco_fim || ''}" ${h.aberto ? '' : 'disabled'} style="width:auto;min-width:100px;" />
       </div>`;
   }).join('');
 
+  // os campos de almoço ficam vazios quando não há almoço — preencher os dois
+  // é o que ativa. Sem checkbox extra: era ela que confundia (o campo vinha
+  // com 12:00 aparecendo mas desligado, e salvava vazio sem avisar).
   document.querySelectorAll('.chk-aberto').forEach((chk) => {
     chk.addEventListener('change', () => {
       const dia = chk.dataset.dia;
-      document.querySelector(`.hr-inicio[data-dia="${dia}"]`).disabled = !chk.checked;
-      document.querySelector(`.hr-fim[data-dia="${dia}"]`).disabled = !chk.checked;
+      ['hr-inicio', 'hr-fim', 'hr-almoco-inicio', 'hr-almoco-fim'].forEach((classe) => {
+        document.querySelector(`.${classe}[data-dia="${dia}"]`).disabled = !chk.checked;
+      });
     });
+  });
+
+  renderBloqueios();
+}
+
+/* ---------- FOLGAS E BLOQUEIOS ---------- */
+// Exceções ao horário fixo: feriado, folga, almoço mais cedo, sair antes.
+// A página pública lê isso e não oferece horário bloqueado.
+let BLOQUEIOS_CACHE = [];
+
+async function renderBloqueios() {
+  const hoje = agoraComoDigitosLocais().slice(0, 10);
+  // só mostra de hoje em diante — bloqueio passado não serve pra nada
+  const { data } = await sb.from('bloqueios')
+    .select('*, barbeiros(nome)')
+    .eq('owner_id', UID)
+    .gte('data', hoje)
+    .order('data');
+  BLOQUEIOS_CACHE = data || [];
+
+  const alvo = document.getElementById('lista-bloqueios');
+  if (!alvo) return;
+  if (!BLOQUEIOS_CACHE.length) {
+    alvo.innerHTML = '<p style="color:var(--muted);font-size:13px;">Nenhum bloqueio marcado. A agenda segue o horário de funcionamento normal.</p>';
+    return;
+  }
+
+  alvo.innerHTML = `<table class="tabela-responsiva"><thead><tr><th>Data</th><th>Horário</th><th>Motivo</th><th></th></tr></thead><tbody>
+    ${BLOQUEIOS_CACHE.map((b) => {
+      const diaSemana = new Date(b.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short' });
+      const faixa = b.hora_inicio
+        ? `${b.hora_inicio.slice(0, 5)} às ${b.hora_fim.slice(0, 5)}`
+        : '<span class="badge badge-brass">Dia todo</span>';
+      const dono = b.barbeiros ? b.barbeiros.nome : 'Todos';
+      return `<tr>
+        <td data-label="Data">${fmtDataCurta(b.data)} <span style="color:var(--muted);font-size:12px;">${diaSemana}</span></td>
+        <td data-label="Horário">${faixa}</td>
+        <td data-label="Motivo" style="color:var(--muted);">${b.motivo || '—'}${PLANO_UM_BARBEIRO ? '' : ` <span style="font-size:12px;">(${dono})</span>`}</td>
+        <td><button class="btn btn-danger" onclick="removerBloqueio('${b.id}')">Remover</button></td>
+      </tr>`;
+    }).join('')}
+  </tbody></table>`;
+}
+
+async function removerBloqueio(id) {
+  if (!confirm('Liberar esse horário de novo na agenda?')) return;
+  await sb.from('bloqueios').delete().eq('id', id);
+  renderBloqueios();
+}
+
+async function abrirModalNovoBloqueio() {
+  const { data: barbeiros } = await sb.from('barbeiros').select('id, nome').eq('owner_id', UID).eq('ativo', true).order('nome');
+  const lista = barbeiros || [];
+  const hoje = agoraComoDigitosLocais().slice(0, 10);
+
+  abrirModal(`
+    <h2>Bloquear data ou horário</h2>
+    <form id="form-modal">
+      <div><label>Data</label><input type="date" name="data" min="${hoje}" value="${hoje}" required /></div>
+      <div>
+        <label>O que bloquear</label>
+        <select name="tipo" id="bloqueio-tipo">
+          <option value="dia">O dia todo (feriado, folga)</option>
+          <option value="faixa">Só um período (almoço, sair mais cedo)</option>
+        </select>
+      </div>
+      <div id="bloqueio-faixa" style="display:none;">
+        <div class="grid grid-2">
+          <div><label>Das</label><input type="time" name="hora_inicio" value="12:00" /></div>
+          <div><label>Até</label><input type="time" name="hora_fim" value="13:00" /></div>
+        </div>
+      </div>
+      ${lista.length > 1 ? `<div><label>Quem fica indisponível</label><select name="barbeiro_id">
+        <option value="">A barbearia toda</option>
+        ${lista.map((b) => `<option value="${b.id}">${b.nome}</option>`).join('')}
+      </select></div>` : ''}
+      <div><label>Motivo (opcional)</label><input type="text" name="motivo" placeholder="Ex: feriado, médico, viagem" /></div>
+      <div id="bloqueio-aviso" style="display:none;background:rgba(255,180,0,.12);border:1px solid rgba(255,180,0,.4);border-radius:var(--radius-sm);padding:10px;font-size:13px;color:#ffd37a;margin-top:4px;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Bloquear</button>
+      </div>
+    </form>
+  `);
+
+  const selTipo = document.getElementById('bloqueio-tipo');
+  const divFaixa = document.getElementById('bloqueio-faixa');
+  selTipo.addEventListener('change', () => {
+    divFaixa.style.display = selTipo.value === 'faixa' ? 'block' : 'none';
+  });
+
+  const form = document.getElementById('form-modal');
+  // avisa se já existe agendamento marcado no período que ele vai bloquear —
+  // bloquear sem saber disso deixaria cliente na mão sem ninguém perceber
+  const checarConflito = async () => {
+    const f = new FormData(form);
+    const data = f.get('data');
+    if (!data) return;
+    const { data: agenda } = await sb.from('agendamentos')
+      .select('data_hora, clientes(nome)')
+      .eq('owner_id', UID).neq('status', 'cancelado')
+      .gte('data_hora', data + 'T00:00:00').lte('data_hora', data + 'T23:59:59');
+    let conflitantes = agenda || [];
+    if (f.get('tipo') === 'faixa' && f.get('hora_inicio') && f.get('hora_fim')) {
+      conflitantes = conflitantes.filter((a) => {
+        const hora = a.data_hora.slice(11, 16);
+        return hora >= f.get('hora_inicio') && hora < f.get('hora_fim');
+      });
+    }
+    const aviso = document.getElementById('bloqueio-aviso');
+    if (conflitantes.length) {
+      aviso.style.display = 'block';
+      aviso.innerHTML = `⚠️ Já existe ${conflitantes.length} agendamento(s) nesse período: ${conflitantes.map((a) => `${a.data_hora.slice(11, 16)} ${a.clientes ? a.clientes.nome : ''}`).join(', ')}.<br>O bloqueio impede <b>novos</b> agendamentos, mas <b>não cancela</b> esses. Avise os clientes.`;
+    } else {
+      aviso.style.display = 'none';
+    }
+  };
+  form.addEventListener('change', checarConflito);
+  checarConflito();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const diaTodo = f.get('tipo') === 'dia';
+    if (!diaTodo && f.get('hora_fim') <= f.get('hora_inicio')) {
+      alert('O horário final tem que ser depois do inicial.');
+      return;
+    }
+    const { error } = await sb.from('bloqueios').insert({
+      owner_id: UID,
+      barbeiro_id: f.get('barbeiro_id') || null,
+      data: f.get('data'),
+      hora_inicio: diaTodo ? null : f.get('hora_inicio'),
+      hora_fim: diaTodo ? null : f.get('hora_fim'),
+      motivo: f.get('motivo') || null
+    });
+    if (error) { alert('Não foi possível salvar o bloqueio. Tente de novo.'); return; }
+    fecharModal();
+    renderBloqueios();
   });
 }
 
@@ -697,17 +1014,37 @@ function copiarLinkPublico() {
 document.getElementById('form-config').addEventListener('submit', async (e) => {
   e.preventDefault();
   const horarios = {};
+  let erroAlmoco = null;
   DIAS.forEach((d) => {
     const aberto = document.querySelector(`.chk-aberto[data-dia="${d.chave}"]`).checked;
+    const almocoInicio = document.querySelector(`.hr-almoco-inicio[data-dia="${d.chave}"]`).value;
+    const almocoFim = document.querySelector(`.hr-almoco-fim[data-dia="${d.chave}"]`).value;
+    // preencher os dois campos é o que define que fecha pro almoço
+    const temAlmoco = aberto && !!almocoInicio && !!almocoFim;
+    if (aberto && (!!almocoInicio !== !!almocoFim)) {
+      erroAlmoco = `Preencha os dois horários do almoço de ${d.nome} (ou deixe os dois vazios pra não fechar).`;
+    } else if (temAlmoco && almocoFim <= almocoInicio) {
+      erroAlmoco = `O almoço de ${d.nome} termina antes de começar.`;
+    }
     horarios[d.chave] = {
       aberto,
       inicio: document.querySelector(`.hr-inicio[data-dia="${d.chave}"]`).value,
-      fim: document.querySelector(`.hr-fim[data-dia="${d.chave}"]`).value
+      fim: document.querySelector(`.hr-fim[data-dia="${d.chave}"]`).value,
+      // guarda o almoço junto do horário do dia; nulo quando não fecha
+      almoco_inicio: temAlmoco ? almocoInicio : null,
+      almoco_fim: temAlmoco ? almocoFim : null
     };
   });
+  if (erroAlmoco) { alert(erroAlmoco); return; }
   const botaoSalvar = e.target.querySelector('button[type="submit"]');
   botaoSalvar.disabled = true;
   botaoSalvar.textContent = 'Salvando...';
+
+  const taxas_pagamento = {
+    credito: Number(document.getElementById('config-taxa-credito').value) || 0,
+    debito: Number(document.getElementById('config-taxa-debito').value) || 0,
+    pix: Number(document.getElementById('config-taxa-pix').value) || 0
+  };
 
   const atualizacao = {
     nome_barbearia: document.getElementById('config-nome').value,
@@ -718,6 +1055,7 @@ document.getElementById('form-config').addEventListener('submit', async (e) => {
     facebook: document.getElementById('config-facebook').value || null,
     sobre: document.getElementById('config-sobre').value || null,
     horarios,
+    taxas_pagamento,
     configurado: true
   };
 
@@ -750,12 +1088,15 @@ function mostrarPagina(id) {
   document.querySelectorAll('.nav-item').forEach((i) => i.classList.toggle('active', i.dataset.page === id));
   document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === id));
   if (id === 'painel') renderPainel();
+  else if (id === 'fila') { document.getElementById('input-data-fila').value = agoraComoDigitosLocais().slice(0, 10); renderFila(); }
+  else if (id === 'comanda-aberta') renderComandaAberta();
   else if (id === 'agenda') renderAgenda();
   else if (id === 'clientes') renderClientes();
   else if (id === 'servicos') renderServicos();
   else if (id === 'produtos') renderProdutos();
   else if (id === 'planos') renderPlanos();
   else if (id === 'barbeiros') renderBarbeiros();
+  else if (id === 'assinaturas') renderAssinaturas();
   else if (id === 'financeiro') renderFinanceiro();
   else if (id === 'config') renderConfig();
 }
@@ -772,22 +1113,23 @@ function paginaEstaAberta(id) {
 }
 function iniciarTempoReal() {
   const mapaTabelaPagina = {
-    agendamentos: ['painel', 'agenda'],
-    cobrancas: ['agenda', 'produtos', 'financeiro'],
+    agendamentos: ['painel', 'fila', 'agenda', 'comanda-aberta'],
+    cobrancas: ['agenda', 'produtos', 'financeiro', 'comanda-aberta'],
+    comanda_itens: ['comanda-aberta'],
     produtos: ['produtos'],
     pedidos: ['produtos'],
     clientes: ['clientes'],
     barbeiros: ['barbeiros', 'produtos', 'planos'],
     planos: ['planos'],
-    assinaturas: ['clientes'],
+    assinaturas: ['clientes', 'assinaturas'],
     despesas: ['financeiro'],
     servicos: ['servicos'],
     lojas: ['produtos']
   };
   const mapaPaginaRender = {
-    painel: renderPainel, agenda: renderAgenda, clientes: renderClientes,
+    painel: renderPainel, fila: renderFila, 'comanda-aberta': renderComandaAberta, agenda: renderAgenda, clientes: renderClientes,
     servicos: renderServicos, produtos: renderProdutos, planos: renderPlanos,
-    barbeiros: renderBarbeiros, financeiro: renderFinanceiro
+    barbeiros: renderBarbeiros, assinaturas: renderAssinaturas, financeiro: renderFinanceiro
   };
   const canal = sb.channel('barber-book-mudancas');
   Object.keys(mapaTabelaPagina).forEach((tabela) => {
@@ -912,29 +1254,36 @@ function dispensarOnboarding() {
 
 async function renderPainel() {
   const hojeISO = agoraComoDigitosLocais().slice(0,10);
-  const [{ data: agHoje }, { data: concluidosHojeData }, { data: despHoje }, { data: barbeirosAtivos }] = await Promise.all([
+  const inicioMes = hojeISO.slice(0, 7) + '-01';
+  const [{ data: agHoje }, { data: concluidosHojeData }, { data: despHoje }, { data: barbeirosAtivos }, { count: totalClientes }, { count: totalServicos }] = await Promise.all([
     sb.from('agendamentos')
-      .select('*, clientes(nome), servicos!agendamentos_servico_id_fkey(nome), agendamento_servicos(servicos(nome))')
+      .select('*, clientes(nome), servicos!agendamentos_servico_id_fkey(nome), agendamento_servicos(servicos(nome)), cobrancas(metodo, status)')
       .gte('data_hora', hojeISO + 'T00:00:00').lte('data_hora', hojeISO + 'T23:59:59')
       .order('data_hora', { ascending: true }),
     sb.from('agendamentos')
       .select('valor, barbeiro_id')
-      .gte('concluido_em', hojeISO + 'T00:00:00').lte('concluido_em', hojeISO + 'T23:59:59'),
+      .eq('status', 'concluido').eq('pago', true)
+      .gte('data_hora', hojeISO + 'T00:00:00').lte('data_hora', hojeISO + 'T23:59:59'),
     sb.from('despesas').select('valor').eq('data', hojeISO),
-    sb.from('barbeiros').select('id, nome, foto_url').eq('owner_id', UID).eq('ativo', true).order('nome')
+    sb.from('barbeiros').select('id, nome, foto_url').eq('owner_id', UID).eq('ativo', true).order('nome'),
+    sb.from('clientes').select('id', { count: 'exact', head: true }).eq('owner_id', UID),
+    sb.from('servicos').select('id', { count: 'exact', head: true }).eq('owner_id', UID).eq('ativo', true)
   ]);
   const lista = agHoje || [];
-  // "concluído hoje" agora é definido por quando foi marcado como feito E
-  // pago (concluido_em), não pela data que estava agendado — assim um corte
-  // agendado pra outro dia mas fechado hoje ainda entra no caixa de hoje.
   const concluidosHoje = concluidosHojeData || [];
   const faturadoHoje = concluidosHoje.reduce((s,a) => s + Number(a.valor||0), 0);
   const saidasHoje = (despHoje||[]).reduce((s,d) => s + Number(d.valor||0), 0);
 
   document.getElementById('p-agendamentos-hoje').textContent = lista.length;
+  document.getElementById('p-clientes-ativos').textContent = totalClientes || 0;
+  document.getElementById('p-profissionais').textContent = (barbeirosAtivos || []).length;
+  document.getElementById('p-servicos-total').textContent = totalServicos || 0;
   document.getElementById('p-concluidos-hoje').textContent = concluidosHoje.length;
-  document.getElementById('p-faturado-hoje').textContent = fmtMoeda(faturadoHoje);
-  document.getElementById('p-saldo-hoje').textContent = fmtMoeda(faturadoHoje - saidasHoje);
+  document.getElementById('p-entradas-hoje').textContent = fmtMoeda(faturadoHoje);
+  document.getElementById('p-saidas-hoje').textContent = fmtMoeda(saidasHoje);
+  const saldoHoje = faturadoHoje - saidasHoje;
+  document.getElementById('p-saldo-hoje').textContent = fmtMoeda(saldoHoje);
+  document.getElementById('p-saldo-hoje').style.color = saldoHoje >= 0 ? '#86EFAC' : '#FCA5A5';
   renderOnboarding(barbeirosAtivos || []);
 
   const listaBarbeiros = barbeirosAtivos || [];
@@ -951,13 +1300,17 @@ async function renderPainel() {
           <span style="font-family:var(--font-mono);color:var(--brass-soft);font-weight:600;font-size:15px;">${fmtMoeda(faturadoBarbeiro)}</span>
         </div>
         <table><tbody>
-          ${doBarbeiro.length ? doBarbeiro.map((a) => `
-            <tr>
+          ${doBarbeiro.length ? doBarbeiro.map((a) => {
+            const formaPgto = a.pago ? (() => { const cp = (a.cobrancas||[]).filter(c=>c.status==='pago'); const tp = cp.some(c=>c.metodo==='plano'); const rl = cp.find(c=>c.metodo&&c.metodo!=='plano'); if (tp && rl) return 'Plano + ' + (NOME_METODO_PAGAMENTO[rl.metodo]||rl.metodo); const co = rl||cp[0]||(a.cobrancas||[])[0]; return co && co.metodo ? (NOME_METODO_PAGAMENTO[co.metodo]||co.metodo) : 'Dinheiro'; })() : '';
+            return `<tr>
               <td style="font-family:var(--font-mono);color:var(--brass-soft);">${a.data_hora.slice(11,16)}</td>
-              <td>${a.clientes ? a.clientes.nome : '—'}</td>
+              <td>${a.clientes ? nomeColorido(a.clientes.nome, a.cliente_id) : '—'}</td>
               <td style="color:var(--muted);">${nomesServicosDe(a)}</td>
+              <td style="font-family:var(--font-mono);color:var(--brass-soft);font-weight:600;">${a.pago ? fmtMoeda(a.valor) : '—'}</td>
+              <td style="color:var(--muted);font-size:12px;">${formaPgto}</td>
               <td>${badgeStatus(a.status)}</td>
-            </tr>`).join('') : `<tr><td colspan="4" style="color:var(--muted);text-align:center;">Nenhum agendamento hoje</td></tr>`}
+            </tr>`;
+          }).join('') : `<tr><td colspan="6" style="color:var(--muted);text-align:center;">Nenhum agendamento hoje</td></tr>`}
         </tbody></table>
       </div>`;
   }).join('') : '<p style="color:var(--muted);">Nenhum barbeiro cadastrado.</p>';
@@ -975,22 +1328,82 @@ function normalizarTexto(s) {
 }
 
 let AGENDA_CACHE = [];
-const NOME_METODO_PAGAMENTO = { pix: 'Pix', cartao: 'Cartão', dinheiro: 'Dinheiro' };
+const NOME_METODO_PAGAMENTO = { pix: 'Pix', cartao: 'Cartão', credito: 'Crédito', debito: 'Débito', dinheiro: 'Dinheiro', plano: 'Plano', plano_pix: 'Plano + Pix', plano_credito: 'Plano + Crédito', plano_debito: 'Plano + Débito', plano_dinheiro: 'Plano + Dinheiro' };
 function formaPagamentoDe(a) {
   if (!a.pago) return '—';
-  const cobrancasPagas = (a.cobrancas || []).filter((c) => c.status === 'pago');
-  const cobranca = cobrancasPagas[0] || (a.cobrancas || [])[0];
-  if (cobranca && cobranca.metodo) return NOME_METODO_PAGAMENTO[cobranca.metodo] || cobranca.metodo;
+  const cp = (a.cobrancas || []).filter((c) => c.status === 'pago');
+  const temPlano = cp.some((c) => c.metodo === 'plano');
+  const real = cp.find((c) => c.metodo && c.metodo !== 'plano');
+  if (temPlano && real) return 'Plano + ' + (NOME_METODO_PAGAMENTO[real.metodo] || real.metodo);
+  if (real) return NOME_METODO_PAGAMENTO[real.metodo] || real.metodo;
+  const co = cp[0] || (a.cobrancas || [])[0];
+  if (co && co.metodo) return NOME_METODO_PAGAMENTO[co.metodo] || co.metodo;
   return 'Dinheiro';
+}
+
+const COR_PLANO_CLIENTE = {};
+async function carregarCoresPlanoClientes() {
+  const { data } = await sb.from('assinaturas')
+    .select('cliente_id, planos(cor)').eq('status', 'ativo');
+  Object.keys(COR_PLANO_CLIENTE).forEach((k) => delete COR_PLANO_CLIENTE[k]);
+  (data || []).forEach((a) => { if (a.planos && a.planos.cor) COR_PLANO_CLIENTE[a.cliente_id] = a.planos.cor; });
+}
+function nomeColorido(nome, clienteId) {
+  const cor = clienteId ? COR_PLANO_CLIENTE[clienteId] : null;
+  return cor ? `<span style="color:${cor};font-weight:600;">${nome}</span>` : nome;
 }
 
 async function renderAgenda() {
   document.getElementById('input-data-agenda').value = dataAgendaAtual;
+  await carregarCoresPlanoClientes();
   const { data } = await sb.from('agendamentos')
-    .select('*, clientes(nome, telefone), servicos!agendamentos_servico_id_fkey(nome), barbeiros(nome, mp_conectado), agendamento_servicos(servicos(nome)), cobrancas(metodo, status)')
+    .select('*, clientes(nome, telefone, faltou), servicos!agendamentos_servico_id_fkey(nome), barbeiros(nome, mp_conectado), agendamento_servicos(servicos(id, nome)), cobrancas(metodo, status)')
     .gte('data_hora', dataAgendaAtual + 'T00:00:00')
     .order('data_hora', { ascending: true });
   AGENDA_CACHE = data || [];
+
+  const clienteIdsAgenda = [...new Set(AGENDA_CACHE.map((a) => a.cliente_id).filter(Boolean))];
+  const assinaturasAgenda = {};
+  if (clienteIdsAgenda.length) {
+    const { data: assins } = await sb.from('assinaturas').select('cliente_id, planos(nome, cor, servicos_inclusos)').eq('status', 'ativo').in('cliente_id', clienteIdsAgenda);
+    (assins || []).forEach((a) => { assinaturasAgenda[a.cliente_id] = a; });
+  }
+  const { data: catalogoAgenda } = await sb.from('servicos').select('nome, preco').eq('owner_id', UID);
+  const mapaPrecoAgenda = {};
+  (catalogoAgenda || []).forEach((s) => { mapaPrecoAgenda[s.nome] = Number(s.preco || 0); });
+
+  if (AGENDA_CACHE.length) {
+    const ids = AGENDA_CACHE.map((a) => a.id);
+    const { data: itensComanda } = await sb.from('comanda_itens')
+      .select('agendamento_id, quantidade, preco_unitario')
+      .in('agendamento_id', ids);
+    AGENDA_CACHE.forEach((a) => {
+      const nomesSvc = (a.agendamento_servicos && a.agendamento_servicos.length)
+        ? a.agendamento_servicos.map((x) => x.servicos ? x.servicos.nome : null).filter(Boolean)
+        : (a.servicos ? [a.servicos.nome] : []);
+      const temPlanoAg = a.cliente_id && assinaturasAgenda[a.cliente_id];
+      const inclusosAg = temPlanoAg ? (assinaturasAgenda[a.cliente_id].planos.servicos_inclusos || []) : [];
+      a._cobertos = [];
+      a._naoCobertos = [];
+      if (temPlanoAg && !a.pago) {
+        nomesSvc.forEach((nome) => {
+          const coberto = inclusosAg.length === 0 || inclusosAg.includes(nome);
+          if (coberto) a._cobertos.push(nome);
+          else a._naoCobertos.push({ nome, preco: mapaPrecoAgenda[nome] || 0 });
+        });
+        a._totalReal = a._naoCobertos.reduce((s, x) => s + x.preco, 0);
+      } else if (a.pago) {
+        a._totalReal = Number(a.valor || 0);
+      } else {
+        const itens = (itensComanda || []).filter((i) => i.agendamento_id === a.id);
+        const valorConsumo = itens.reduce((s, i) => s + Number(i.preco_unitario) * i.quantidade, 0);
+        a._totalReal = Number(a.valor || 0) + valorConsumo;
+      }
+      a._temPlano = !!temPlanoAg;
+      a._planoNome = temPlanoAg ? assinaturasAgenda[a.cliente_id].planos.nome : '';
+    });
+  }
+
   document.getElementById('busca-agenda').value = '';
   desenharAgenda(AGENDA_CACHE);
 }
@@ -1003,7 +1416,7 @@ function desenharAgenda(lista) {
   document.getElementById('corpo-agenda').innerHTML = lista.length ? lista.map((a) => `
     <tr>
       <td data-label="Data / Hora" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtDataCurta(a.data_hora)} ${a.data_hora.slice(11,16)}</td>
-      <td data-label="Cliente">${a.clientes ? a.clientes.nome : '—'}</td>
+      <td data-label="Cliente">${a.clientes ? nomeColorido(a.clientes.nome, a.cliente_id) : '—'}${a.clientes && a.clientes.faltou ? ' <span class="badge" style="background:rgba(255,77,79,0.15);color:#FF4D4F;border:none;font-size:10px;">⚠ Pgto adiantado</span>' : ''}</td>
       <td data-label="Serviço" class="detalhe" style="color:var(--muted);">${nomesServicosDe(a)}</td>
       <td data-label="Barbeiro" class="detalhe" style="color:var(--muted);">${a.barbeiros ? a.barbeiros.nome : '—'}</td>
       <td data-label="Status" class="detalhe">
@@ -1013,19 +1426,39 @@ function desenharAgenda(lista) {
           <option value="cancelado" ${a.status==='cancelado'?'selected':''}>cancelado</option>
         </select>
       </td>
-      <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);font-weight:600;">${fmtMoeda(a.valor)}</td>
+      <td data-label="Valor" style="font-family:var(--font-mono);font-weight:600;">
+        <div style="color:${a._temPlano && !a.pago ? '#22C55E' : 'var(--brass-soft)'};">${fmtMoeda(a._totalReal != null ? a._totalReal : a.valor)}</div>
+        ${a._temPlano && !a.pago && (a._cobertos.length || a._naoCobertos.length) ? `<div style="font-family:var(--font-body);font-weight:400;font-size:10px;margin-top:4px;">` +
+          (a._cobertos.length ? `<div style="color:#22C55E;">✓ ${a._cobertos.join(', ')} — plano</div>` : '') +
+          a._naoCobertos.map((x) => `<div style="color:#F59E0B;">✗ ${x.nome} — ${fmtMoeda(x.preco)}</div>`).join('') +
+        `</div>` : ''}
+      </td>
       <td data-label="Pagamento" class="detalhe" style="color:var(--muted);">${formaPagamentoDe(a)}</td>
       <td class="detalhe" style="display:flex;gap:6px;flex-wrap:wrap;">
         ${a.pago
           ? `<span style="font-size:12px;color:#7FE0A7;font-weight:600;">✓ Pago</span>`
           : `
-            ${a.barbeiros && a.barbeiros.mp_conectado ? `<button class="btn-mp" onclick="abrirModalCobrar('${a.id}')">${LOGO_MP_SVG} Cobrar</button>` : ''}
+            <button class="btn btn-primary" onclick="abrirComanda('${a.id}')">🧾 Comanda</button>
             <button class="btn btn-ghost" onclick="marcarComoPago('${a.id}')">✓ Marcar pago</button>
           `}
         <button class="btn btn-danger" onclick="removerAgendamento('${a.id}')">Remover</button>
+        ${a.clientes && a.clientes.telefone && a.status === 'agendado' ? `<button class="btn btn-ghost" style="color:#25D366;" onclick="enviarLembrete('${a.id}')">📲 Lembrete</button>` : ''}
       </td>
       <td class="col-seta"><button type="button" class="btn-seta" onclick="alternarLinha(this)">Ver detalhes ▾</button></td>
     </tr>`).join('') : `<tr><td colspan="9" style="color:var(--muted);text-align:center;">Nenhum agendamento encontrado</td></tr>`;
+}
+
+function enviarLembrete(agendamentoId) {
+  const a = AGENDA_CACHE.find((x) => x.id === agendamentoId);
+  if (!a || !a.clientes || !a.clientes.telefone) return alert('Cliente sem telefone cadastrado.');
+  const tel = a.clientes.telefone.replace(/\D/g, '');
+  const telFormatado = tel.startsWith('55') ? tel : '55' + tel;
+  const data = new Date(a.data_hora).toLocaleDateString('pt-BR');
+  const hora = a.data_hora.slice(11, 16);
+  const servicos = nomesServicosDe(a);
+  const barbeiro = a.barbeiros ? a.barbeiros.nome : '';
+  const msg = `*Lembrete de Agendamento*\n\n🗓️ Data: ${data}\n⏰ Horário: ${hora}\n✂️ Serviços: ${servicos}\n👨‍💼 Profissional: ${barbeiro}\n\n📍 Não esqueça do seu horário marcado!\n💬 Qualquer dúvida, entre em contato conosco.`;
+  window.open('https://wa.me/' + telFormatado + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 async function marcarComoPago(agendamentoId) {
@@ -1035,6 +1468,489 @@ async function marcarComoPago(agendamentoId) {
   if (atual && atual.status === 'concluido') atualizacao.concluido_em = agoraComoDigitosLocais();
   await sb.from('agendamentos').update(atualizacao).eq('id', agendamentoId);
   renderAgenda();
+}
+
+/* ---------- COMANDA ABERTA (aba dedicada) ---------- */
+async function renderComandaAberta() {
+  await carregarCoresPlanoClientes();
+  const hojeISO = agoraComoDigitosLocais().slice(0, 10);
+
+  const [{ data: abertos }, { data: fechadosHoje }] = await Promise.all([
+    sb.from('agendamentos')
+      .select('*, clientes(nome, telefone), servicos!agendamentos_servico_id_fkey(nome), barbeiros(nome), agendamento_servicos(preco, servicos(id, nome)), cobrancas(metodo, status)')
+      .eq('pago', false).in('status', ['agendado', 'concluido'])
+      .order('data_hora', { ascending: true }),
+    sb.from('agendamentos')
+      .select('*, clientes(nome, telefone), servicos!agendamentos_servico_id_fkey(nome), barbeiros(nome), agendamento_servicos(preco, servicos(id, nome)), cobrancas(metodo, status)')
+      .eq('pago', true).eq('status', 'concluido')
+      .gte('data_hora', hojeISO + 'T00:00:00').lte('data_hora', hojeISO + 'T23:59:59')
+      .order('data_hora', { ascending: false })
+  ]);
+
+  const listaAbertos = abertos || [];
+  const listaFechados = fechadosHoje || [];
+  const todosIds = [...listaAbertos, ...listaFechados].map((a) => a.id);
+
+  let itensPorAgendamento = {};
+  if (todosIds.length) {
+    const { data: todosItens } = await sb.from('comanda_itens').select('*, produtos(nome)').in('agendamento_id', todosIds).order('criado_em');
+    (todosItens || []).forEach((i) => {
+      if (!itensPorAgendamento[i.agendamento_id]) itensPorAgendamento[i.agendamento_id] = [];
+      itensPorAgendamento[i.agendamento_id].push(i);
+    });
+  }
+
+  const clienteIdsAbertos = [...new Set(listaAbertos.map((a) => a.cliente_id).filter(Boolean))];
+  const planoPorCliente = {};
+  if (clienteIdsAbertos.length) {
+    const { data: assins } = await sb.from('assinaturas')
+      .select('cliente_id, usos_no_ciclo, planos(nome, limite_mensal, servicos_inclusos)')
+      .eq('status', 'ativo').in('cliente_id', clienteIdsAbertos);
+    (assins || []).forEach((a) => { if (a.planos) planoPorCliente[a.cliente_id] = a; });
+  }
+
+  const { data: servicosAtuaisComanda } = await sb.from('servicos').select('nome, preco').eq('owner_id', UID);
+  const mapaPrecoServico = {};
+  (servicosAtuaisComanda || []).forEach((s) => { mapaPrecoServico[s.nome] = Number(s.preco || 0); });
+
+  function planoCobreServico(a) {
+    if (a.pago) return false;
+    const assin = a.cliente_id ? planoPorCliente[a.cliente_id] : null;
+    if (!assin || !assin.planos) return false;
+    const inclusos = assin.planos.servicos_inclusos || [];
+    const nomes = (a.agendamento_servicos && a.agendamento_servicos.length)
+      ? a.agendamento_servicos.map((x) => x.servicos ? x.servicos.nome : null).filter(Boolean)
+      : (a.servicos ? [a.servicos.nome] : []);
+    const cobre = inclusos.length === 0 || nomes.some((n) => inclusos.includes(n));
+    const restantes = assin.planos.limite_mensal ? Math.max(0, assin.planos.limite_mensal - assin.usos_no_ciclo) : null;
+    return cobre && (restantes === null || restantes > 0);
+  }
+
+  function cardComanda(a, aberta) {
+    const itens = itensPorAgendamento[a.id] || [];
+    const totalProdutos = itens.reduce((s, i) => s + Number(i.preco_unitario) * i.quantidade, 0);
+    const servicoGratis = aberta && planoCobreServico(a);
+    const nomesAtend = (a.agendamento_servicos && a.agendamento_servicos.length)
+      ? a.agendamento_servicos.map((x) => x.servicos ? x.servicos.nome : null).filter(Boolean)
+      : (a.servicos ? [a.servicos.nome] : []);
+    const valorAtualServicos = nomesAtend.reduce((s, nome) => s + (mapaPrecoServico[nome] || 0), 0);
+    let valorServico = valorAtualServicos || Number(a.valor || 0);
+    if (aberta && servicoGratis) {
+      const assinC = a.cliente_id ? planoPorCliente[a.cliente_id] : null;
+      const inc = assinC && assinC.planos ? (assinC.planos.servicos_inclusos || []) : [];
+      const limOk = assinC && assinC.planos ? (assinC.planos.limite_mensal ? Math.max(0, assinC.planos.limite_mensal - assinC.usos_no_ciclo) > 0 : true) : false;
+      const tPlano = !!assinC && !!assinC.planos && !a.pago && limOk;
+      valorServico = nomesAtend.reduce((s, nome) => {
+        const coberto = tPlano && (inc.length === 0 || inc.includes(nome));
+        return s + (coberto ? 0 : (mapaPrecoServico[nome] || 0));
+      }, 0);
+    }
+    const total = aberta ? valorServico + totalProdutos : Number(a.valor || 0);
+    const hora = a.data_hora.slice(11, 16);
+    const data = fmtDataCurta(a.data_hora);
+    const formaPgto = (() => { const cp = (a.cobrancas||[]).filter(c=>c.status==='pago'); const tp = cp.some(c=>c.metodo==='plano'); const rl = cp.find(c=>c.metodo&&c.metodo!=='plano'); if (tp && rl) return 'Plano + ' + (NOME_METODO_PAGAMENTO[rl.metodo]||rl.metodo); const co = rl||cp[0]||(a.cobrancas||[])[0]; return co && co.metodo ? (NOME_METODO_PAGAMENTO[co.metodo]||co.metodo) : 'Dinheiro'; })();
+
+    if (aberta) {
+      const assinCliente = a.cliente_id ? planoPorCliente[a.cliente_id] : null;
+      const planoNomeCard = assinCliente && assinCliente.planos ? assinCliente.planos.nome : '';
+      const inclusos = assinCliente && assinCliente.planos ? (assinCliente.planos.servicos_inclusos || []) : [];
+      const limiteOk = assinCliente && assinCliente.planos ? (assinCliente.planos.limite_mensal ? Math.max(0, assinCliente.planos.limite_mensal - assinCliente.usos_no_ciclo) > 0 : true) : false;
+      const temPlano = !!assinCliente && !!assinCliente.planos && !a.pago && limiteOk;
+      const svcDetalhes = nomesAtend.map((nome) => {
+        const coberto = temPlano && (inclusos.length === 0 || inclusos.includes(nome));
+        return { nome, coberto, preco: mapaPrecoServico[nome] || 0 };
+      });
+      const algumCoberto = svcDetalhes.some((s) => s.coberto);
+      return `
+        <div class="card" style="margin-bottom:12px;border-left:3px solid ${a.status === 'concluido' ? '#F59E0B' : 'var(--brass-soft)'};">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div>
+              <h3 style="margin:0;font-size:15px;">${a.clientes ? nomeColorido(a.clientes.nome, a.cliente_id) : '—'}</h3>
+              <span style="color:var(--muted);font-size:12px;">${data} às ${hora} · ${a.barbeiros ? a.barbeiros.nome : '—'}</span>
+              ${algumCoberto ? `<div style="margin-top:4px;"><span class="badge" style="background:rgba(127,224,167,0.15);color:#7FE0A7;border:none;font-size:10px;">✅ ${planoNomeCard} cobre serviço(s)</span></div>` : ''}
+            </div>
+            <div style="text-align:right;">
+              <span style="font-family:var(--font-mono);font-size:20px;color:${servicoGratis ? '#7FE0A7' : 'var(--brass-soft)'};font-weight:700;">${fmtMoeda(total)}</span>
+              <div>${badgeStatus(a.status)}</div>
+            </div>
+          </div>
+          <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;">
+            ${algumCoberto ? svcDetalhes.map((s, idx) => `
+              <div style="display:flex;justify-content:space-between;font-size:13px;${idx > 0 ? 'margin-top:6px;padding-top:6px;border-top:1px solid var(--border);' : ''}">
+                <span>${s.coberto ? '✅' : '✂️'} ${s.nome}</span>
+                <strong style="font-family:var(--font-mono);${s.coberto ? 'color:#7FE0A7;' : ''}">${s.coberto ? '<span style="text-decoration:line-through;color:var(--muted);margin-right:4px;">' + fmtMoeda(s.preco) + '</span> R$ 0,00 <span style="font-size:10px;font-weight:400;color:#7FE0A7;">plano</span>' : fmtMoeda(s.preco)}</strong>
+              </div>
+            `).join('') + `
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">
+                <span style="color:var(--muted);">Total serviço</span>
+                <strong style="font-family:var(--font-mono);color:#7FE0A7;"><span style="text-decoration:line-through;color:var(--muted);margin-right:6px;">${fmtMoeda(valorAtualServicos)}</span>${fmtMoeda(valorServico)}</strong>
+              </div>` : `
+              <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span>✂️ ${nomesServicosDe(a)}</span>
+                <strong style="font-family:var(--font-mono);">${fmtMoeda(valorServico)}</strong>
+              </div>`}
+            ${itens.map((i) => `
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">
+                <span>📦 ${i.quantidade}x ${i.produtos ? i.produtos.nome : 'produto'}</span>
+                <strong style="font-family:var(--font-mono);">${fmtMoeda(Number(i.preco_unitario) * i.quantidade)}</strong>
+              </div>
+            `).join('')}
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="abrirComanda('${a.id}')">🧾 Gerenciar comanda</button>
+            <button class="btn btn-ghost" onclick="marcarComoPago('${a.id}')">✓ Marcar pago</button>
+            ${a.clientes && a.clientes.telefone ? `<button class="btn btn-ghost" style="color:#25D366;" onclick="window.open('https://wa.me/${(a.clientes.telefone||'').replace(/\\D/g,'')}','_blank')">📲 WhatsApp</button>` : ''}
+          </div>
+        </div>`;
+    }
+
+    return `
+      <tr>
+        <td style="font-family:var(--font-mono);color:var(--brass-soft);">${hora}</td>
+        <td>${a.clientes ? nomeColorido(a.clientes.nome, a.cliente_id) : '—'}</td>
+        <td class="detalhe" style="color:var(--muted);">${nomesServicosDe(a)}${itens.length ? ` + ${itens.length} item(ns)` : ''}</td>
+        <td style="font-family:var(--font-mono);color:var(--brass-soft);font-weight:600;">${fmtMoeda(total)}</td>
+        <td class="detalhe" style="color:var(--muted);">${formaPgto}</td>
+        <td class="detalhe" style="display:flex;gap:6px;">
+          <button class="btn" onclick="abrirComanda('${a.id}')">Editar</button>
+          <button class="btn btn-danger" onclick="excluirComandaFechada('${a.id}')">Excluir</button>
+        </td>
+        <td class="col-seta"><button type="button" class="btn-seta" onclick="alternarLinha(this)">Ver detalhes ▾</button></td>
+      </tr>`;
+  }
+
+  const abertasHtml = listaAbertos.length
+    ? listaAbertos.map((a) => cardComanda(a, true)).join('')
+    : `<div class="card" style="text-align:center;padding:30px 20px;">
+        <div style="font-size:36px;margin-bottom:8px;">✅</div>
+        <h3 style="color:var(--cream);margin-bottom:4px;">Nenhuma comanda aberta</h3>
+        <p style="color:var(--muted);font-size:13px;">Novos atendimentos aparecerão aqui automaticamente.</p>
+      </div>`;
+
+  const totalFechado = listaFechados.reduce((s, a) => s + Number(a.valor || 0), 0);
+
+  const fechadasHtml = listaFechados.length
+    ? `<div class="card" style="margin-top:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3>Fechadas hoje</h3>
+          <span style="font-family:var(--font-mono);color:#7FE0A7;font-weight:600;font-size:15px;">${fmtMoeda(totalFechado)}</span>
+        </div>
+        <table class="tabela-responsiva"><thead><tr>
+          <th>Hora</th><th>Cliente</th><th class="detalhe">Serviço</th><th>Valor</th><th class="detalhe">Pagamento</th><th class="detalhe"></th><th class="col-seta"></th>
+        </tr></thead><tbody>
+          ${listaFechados.map((a) => cardComanda(a, false)).join('')}
+        </tbody></table>
+      </div>`
+    : '';
+
+  document.getElementById('corpo-comanda-aberta').innerHTML = abertasHtml + fechadasHtml;
+}
+
+async function excluirComandaFechada(id) {
+  if (!confirm('Excluir esta comanda fechada? O agendamento volta para não pago.')) return;
+  await sb.from('cobrancas').delete().eq('agendamento_id', id);
+  await sb.from('agendamentos').update({ pago: false, concluido_em: null, status: 'agendado' }).eq('id', id);
+  renderComandaAberta();
+}
+
+/* ---------- COMANDA ---------- */
+// A comanda é o atendimento inteiro: o serviço agendado + o que o cliente
+// consumiu na cadeira. Não existe tabela "comandas" — o próprio agendamento
+// faz esse papel (já tem cliente, barbeiro, serviço e valor), e a tabela
+// comanda_itens guarda só os produtos lançados pelo barbeiro.
+//
+// Se o cliente tem plano ativo que cobre o serviço, o serviço entra como
+// R$ 0 e o crédito do plano é consumido no fechamento — os produtos
+// continuam sendo cobrados normalmente.
+let COMANDA_ATUAL = null;
+
+async function abrirComanda(agendamentoId) {
+  let a = AGENDA_CACHE.find((x) => x.id === agendamentoId);
+  if (!a) {
+    const { data } = await sb.from('agendamentos')
+      .select('*, clientes(nome, telefone), servicos!agendamentos_servico_id_fkey(nome), barbeiros(nome, mp_conectado), agendamento_servicos(servicos(id, nome))')
+      .eq('id', agendamentoId).single();
+    a = data;
+  }
+  if (!a) return;
+
+  abrirModal('<h2>Comanda</h2><p style="color:var(--muted);font-size:13px;margin-top:10px;">Carregando...</p>');
+
+  const servicoIds = (a.agendamento_servicos || []).map((x) => x.servicos && x.servicos.id).filter(Boolean);
+  const [{ data: itens }, { data: produtos }, { data: assinatura }, { data: servicosAtuais }] = await Promise.all([
+    sb.from('comanda_itens').select('*, produtos(nome)').eq('agendamento_id', agendamentoId).order('criado_em'),
+    sb.from('produtos').select('id, nome, preco, estoque').eq('owner_id', UID).eq('ativo', true).order('nome'),
+    a.cliente_id
+      ? sb.from('assinaturas').select('id, usos_no_ciclo, ciclo_inicio, planos(nome, limite_mensal, servicos_inclusos)')
+          .eq('cliente_id', a.cliente_id).eq('status', 'ativo').maybeSingle()
+      : Promise.resolve({ data: null }),
+    sb.from('servicos').select('id, nome, preco').eq('owner_id', UID)
+  ]);
+
+  // o plano só cobre se algum serviço do agendamento estiver na lista dele
+  // e ainda houver uso disponível no mês
+  const nomesDoAtendimento = (a.agendamento_servicos && a.agendamento_servicos.length)
+    ? a.agendamento_servicos.map((x) => x.servicos ? x.servicos.nome : null).filter(Boolean)
+    : (a.servicos ? [a.servicos.nome] : []);
+  let plano = null;
+  if (assinatura && assinatura.planos) {
+    const inclusos = assinatura.planos.servicos_inclusos || [];
+    const cobre = inclusos.length === 0 || nomesDoAtendimento.some((n) => inclusos.includes(n));
+    const restantes = assinatura.planos.limite_mensal
+      ? Math.max(0, assinatura.planos.limite_mensal - assinatura.usos_no_ciclo)
+      : null;
+    plano = {
+      id: assinatura.id,
+      nome: assinatura.planos.nome,
+      cobre,
+      restantes,
+      disponivel: cobre && (restantes === null || restantes > 0)
+    };
+  }
+
+  const mapaServicos = {};
+  (servicosAtuais || []).forEach((s) => { mapaServicos[s.nome] = s; });
+  const inclusos = plano && assinatura && assinatura.planos ? (assinatura.planos.servicos_inclusos || []) : [];
+  const svcDetalhes = nomesDoAtendimento.map((nome) => {
+    const preco = mapaServicos[nome] ? Number(mapaServicos[nome].preco) : 0;
+    const coberto = plano && plano.disponivel && (inclusos.length === 0 || inclusos.includes(nome));
+    return { nome, preco, coberto };
+  });
+  const valorCoberto = svcDetalhes.filter((s) => s.coberto).reduce((s, x) => s + x.preco, 0);
+  const valorNaoCoberto = svcDetalhes.filter((s) => !s.coberto).reduce((s, x) => s + x.preco, 0);
+  const valorAtualServicos = valorCoberto + valorNaoCoberto;
+  COMANDA_ATUAL = { agendamento: a, itens: itens || [], produtos: produtos || [], plano, valorServico: valorAtualServicos || Number(a.valor || 0), svcDetalhes };
+  desenharComanda();
+}
+
+function desenharComanda() {
+  const { agendamento: a, itens, produtos, plano, valorServico: valorAtual, svcDetalhes } = COMANDA_ATUAL;
+  const cobertos = (svcDetalhes || []).filter((s) => s.coberto);
+  const naoCobertos = (svcDetalhes || []).filter((s) => !s.coberto);
+  const temCoberturaParcial = cobertos.length > 0 && naoCobertos.length > 0;
+  const tudoCoberto = cobertos.length > 0 && naoCobertos.length === 0;
+  const valorServico = tudoCoberto ? 0 : (temCoberturaParcial ? naoCobertos.reduce((s, x) => s + x.preco, 0) : valorAtual);
+  const totalProdutos = itens.reduce((s, i) => s + Number(i.preco_unitario) * i.quantidade, 0);
+  const total = valorServico + totalProdutos;
+
+  let avisoPlano = '';
+  if (plano && plano.disponivel && tudoCoberto) {
+    avisoPlano = `<div style="background:rgba(127,224,167,0.1);border:1px solid rgba(127,224,167,0.3);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:4px;">
+      <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#7FE0A7;font-weight:600;">✅ Plano ${plano.nome} cobre todos os serviços</div>
+      <div style="color:var(--muted);font-size:12px;margin-top:4px;">${plano.restantes !== null ? `${plano.restantes} uso(s) restante(s) no mês` : 'Usos ilimitados'} · Apenas o consumo da loja será cobrado</div>
+    </div>`;
+  } else if (plano && plano.disponivel && temCoberturaParcial) {
+    avisoPlano = `<div style="background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:4px;">
+      <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#EAB308;font-weight:600;">⚠ Plano ${plano.nome} cobre parcialmente</div>
+      <div style="color:var(--muted);font-size:12px;margin-top:4px;">${plano.restantes !== null ? `${plano.restantes} uso(s) restante(s) no mês` : 'Usos ilimitados'}</div>
+    </div>`;
+  } else if (plano && plano.cobre && plano.restantes === 0) {
+    avisoPlano = `<div style="background:rgba(255,77,79,0.1);border:1px solid rgba(255,77,79,0.3);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:4px;">
+      <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#FF4D4F;font-weight:600;">⚠ ${plano.nome} · limite do mês esgotado</div>
+      <div style="color:var(--muted);font-size:12px;margin-top:4px;">O serviço será cobrado normalmente</div>
+    </div>`;
+  } else if (plano) {
+    avisoPlano = `<span class="badge badge-muted">${plano.nome} não cobre esse serviço</span>`;
+  }
+
+  let linhasServicos = '';
+  if (svcDetalhes && svcDetalhes.length > 0 && (temCoberturaParcial || tudoCoberto)) {
+    linhasServicos = svcDetalhes.map((s) => `
+      <div style="display:flex;justify-content:space-between;font-size:13px;${s === svcDetalhes[0] ? '' : 'margin-top:6px;'}">
+        <span style="color:${s.coberto ? '#7FE0A7' : '#EAB308'};">${s.coberto ? '✓' : '✗'} ${s.nome}</span>
+        <strong style="font-family:var(--font-mono);${s.coberto ? 'color:#7FE0A7;' : ''}">${s.coberto ? `<span style="text-decoration:line-through;color:var(--muted);margin-right:4px;font-weight:400;">${fmtMoeda(s.preco)}</span>R$ 0,00` : fmtMoeda(s.preco)}</strong>
+      </div>`).join('');
+  } else {
+    linhasServicos = `
+      <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <span>${nomesServicosDe(a)}</span>
+        <strong style="font-family:var(--font-mono);">${fmtMoeda(valorServico)}</strong>
+      </div>`;
+  }
+
+  abrirModal(`
+    <h2>Comanda</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:4px;">
+      ${a.clientes ? a.clientes.nome : 'Cliente'} · ${fmtDataCurta(a.data_hora)} ${a.data_hora.slice(11, 16)}
+    </p>
+    ${avisoPlano ? `<div style="margin-bottom:12px;">${avisoPlano}</div>` : ''}
+
+    <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">
+      ${linhasServicos}
+      ${itens.map((i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+          <span>${i.quantidade}x ${i.produtos ? i.produtos.nome : 'produto'}</span>
+          <span style="display:flex;align-items:center;gap:8px;">
+            <strong style="font-family:var(--font-mono);">${fmtMoeda(Number(i.preco_unitario) * i.quantidade)}</strong>
+            <button class="x" title="Remover" onclick="removerItemComanda('${i.id}')">✕</button>
+          </span>
+        </div>`).join('')}
+    </div>
+
+    <p style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Lançar consumo</p>
+    <div style="max-height:190px;overflow-y:auto;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px;margin-bottom:14px;">
+      ${produtos.length ? produtos.map((p) => {
+        const semEstoque = Number(p.estoque) <= 0;
+        return `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 6px;border-bottom:1px solid var(--border);font-size:13px;">
+          <span style="color:${semEstoque ? 'var(--muted)' : 'var(--cream)'};">${p.nome}${semEstoque ? ' (sem estoque)' : ''}</span>
+          <span style="display:flex;align-items:center;gap:10px;">
+            <strong style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(p.preco)}</strong>
+            <button class="btn" style="padding:2px 10px;" ${semEstoque ? 'disabled' : ''} onclick="adicionarItemComanda('${p.id}')">+</button>
+          </span>
+        </div>`;
+      }).join('') : '<p style="color:var(--muted);font-size:13px;padding:8px;">Nenhum produto cadastrado.</p>'}
+    </div>
+
+    <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="text-transform:uppercase;font-size:12px;letter-spacing:.04em;color:var(--muted);">Total à vista</span>
+        <strong style="font-family:var(--font-mono);font-size:22px;color:var(--brass-soft);">${fmtMoeda(total)}</strong>
+      </div>
+      ${(() => {
+        const tx = PERFIL.taxas_pagamento || {};
+        const linhas = [];
+        if (Number(tx.credito||0) > 0) { const v = Math.round((total + Math.round(total * tx.credito) / 100) * 100) / 100; linhas.push('No crédito: ' + fmtMoeda(v) + ' (+' + tx.credito + '%)'); }
+        if (Number(tx.debito||0) > 0) { const v = Math.round((total + Math.round(total * tx.debito) / 100) * 100) / 100; linhas.push('No débito: ' + fmtMoeda(v) + ' (+' + tx.debito + '%)'); }
+        if (Number(tx.pix||0) > 0) { const v = Math.round((total + Math.round(total * tx.pix) / 100) * 100) / 100; linhas.push('No Pix: ' + fmtMoeda(v) + ' (+' + tx.pix + '%)'); }
+        return linhas.length ? '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">' + linhas.map(l => '<div style="display:flex;justify-content:flex-end;font-family:var(--font-mono);font-size:14px;color:#22C55E;font-weight:600;">' + l + '</div>').join('') + '</div>' : '';
+      })()}
+    </div>
+
+    <p style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Fechar e cobrar</p>
+    <div id="area-comanda-pagamento">
+      <div class="formas-pagamento">
+        <button type="button" class="forma-pagamento" onclick="fecharComanda('dinheiro')">
+          <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span><span>Dinheiro</span>
+        </button>
+        ${a.barbeiros && a.barbeiros.mp_conectado ? `
+          <button type="button" class="forma-pagamento" onclick="fecharComanda('pix')">
+            <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span><span>Pix${(PERFIL.taxas_pagamento||{}).pix ? `<br><span style="font-size:10px;color:var(--muted);">+${(PERFIL.taxas_pagamento||{}).pix}% taxa</span>` : ''}</span>
+          </button>
+          <button type="button" class="forma-pagamento" onclick="fecharComanda('credito')">
+            <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span><span>Crédito${(PERFIL.taxas_pagamento||{}).credito ? `<br><span style="font-size:10px;color:var(--muted);">+${(PERFIL.taxas_pagamento||{}).credito}% taxa</span>` : ''}</span>
+          </button>
+          <button type="button" class="forma-pagamento" onclick="fecharComanda('debito')">
+            <span class="forma-icone" style="background:rgba(139,92,246,0.15);color:#8B5CF6;">💳</span><span>Débito${(PERFIL.taxas_pagamento||{}).debito ? `<br><span style="font-size:10px;color:var(--muted);">+${(PERFIL.taxas_pagamento||{}).debito}% taxa</span>` : ''}</span>
+          </button>` : ''}
+      </div>
+      ${a.barbeiros && !a.barbeiros.mp_conectado ? '<p style="color:var(--muted);font-size:12px;margin-top:8px;">Pix e cartão aparecem aqui depois de conectar o Mercado Pago na aba Barbeiros.</p>' : ''}
+    </div>
+    <div class="modal-actions"><button type="button" class="btn" style="width:100%;" onclick="fecharComandaSemCobrar()">Fechar sem cobrar</button></div>
+  `);
+}
+
+function fecharComandaSemCobrar() {
+  fecharModal();
+  if (paginaEstaAberta('comanda-aberta')) renderComandaAberta();
+}
+
+async function adicionarItemComanda(produtoId) {
+  const { agendamento: a, produtos, itens } = COMANDA_ATUAL;
+  const p = produtos.find((x) => x.id === produtoId);
+  if (!p) return;
+
+  // se já está na comanda, soma quantidade em vez de criar linha nova
+  const existente = itens.find((i) => i.produto_id === produtoId);
+  const jaNaComanda = existente ? existente.quantidade : 0;
+  if (jaNaComanda + 1 > Number(p.estoque)) {
+    alert(`Só tem ${p.estoque} unidade(s) de ${p.nome} em estoque.`);
+    return;
+  }
+
+  if (existente) {
+    await sb.from('comanda_itens').update({ quantidade: existente.quantidade + 1 }).eq('id', existente.id);
+  } else {
+    await sb.from('comanda_itens').insert({
+      owner_id: UID, agendamento_id: a.id, produto_id: produtoId, quantidade: 1, preco_unitario: p.preco
+    });
+  }
+  abrirComanda(a.id);
+}
+
+async function removerItemComanda(itemId) {
+  const item = COMANDA_ATUAL.itens.find((i) => i.id === itemId);
+  if (!item) return;
+  if (item.quantidade > 1) {
+    await sb.from('comanda_itens').update({ quantidade: item.quantidade - 1 }).eq('id', itemId);
+  } else {
+    await sb.from('comanda_itens').delete().eq('id', itemId);
+  }
+  abrirComanda(COMANDA_ATUAL.agendamento.id);
+}
+
+async function fecharComanda(metodo) {
+  const { agendamento: a, itens, plano, valorServico: valorAtual, svcDetalhes } = COMANDA_ATUAL;
+  const cobertosF = (svcDetalhes || []).filter((s) => s.coberto);
+  const naoCobertosF = (svcDetalhes || []).filter((s) => !s.coberto);
+  const tudoCoberto = cobertosF.length > 0 && naoCobertosF.length === 0;
+  const servicoGratis = tudoCoberto;
+  const valorServico = tudoCoberto ? 0 : (cobertosF.length > 0 ? naoCobertosF.reduce((s, x) => s + x.preco, 0) : valorAtual);
+  const totalProdutos = itens.reduce((s, i) => s + Number(i.preco_unitario) * i.quantidade, 0);
+  const totalBase = valorServico + totalProdutos;
+
+  const taxas = PERFIL.taxas_pagamento || {};
+  const metodoTaxa = metodo === 'credito' || metodo === 'debito' ? metodo : (metodo === 'pix' ? 'pix' : '');
+  const taxaPct = metodoTaxa ? Number(taxas[metodoTaxa] || 0) : 0;
+  const valorTaxa = taxaPct > 0 ? Math.round(totalBase * taxaPct) / 100 : 0;
+  const total = Math.round((totalBase + valorTaxa) * 100) / 100;
+  const metodoCobranca = cobertosF.length > 0 && naoCobertosF.length > 0 ? 'plano_' + metodo : (tudoCoberto && totalBase === 0 ? 'plano' : metodo);
+
+  const area = document.getElementById('area-comanda-pagamento');
+  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+
+  try {
+    // 1) baixa o estoque do que foi consumido (só agora, no fechamento)
+    for (const item of itens) {
+      const { data: prod } = await sb.from('produtos').select('estoque').eq('id', item.produto_id).single();
+      if (prod) {
+        await sb.from('produtos').update({ estoque: Math.max(0, Number(prod.estoque) - item.quantidade) }).eq('id', item.produto_id);
+      }
+    }
+
+    // 2) consome o crédito do plano, se ele cobriu algum serviço
+    if (cobertosF.length > 0) {
+      await fetch(`${MP_API_URL}/api/plano-cliente`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cliente_id: a.cliente_id, agendamento_id: a.id })
+      }).catch(() => {});
+    }
+
+    // 3) registra a cobrança com o total da comanda e a forma escolhida
+    await sb.from('cobrancas').insert({
+      owner_id: UID,
+      barbeiro_id: a.barbeiro_id,
+      cliente_id: a.cliente_id,
+      agendamento_id: a.id,
+      valor: total,
+      metodo: metodoCobranca,
+      status: 'pago',
+      pago_em: new Date().toISOString(),
+      descricao: `Comanda: ${nomesServicosDe(a)}${itens.length ? ` + ${itens.length} item(ns)` : ''}${taxaPct > 0 ? ` (taxa ${metodoTaxa} ${taxaPct}%: +${valorTaxa.toFixed(2)})` : ''}`
+    });
+
+    // 4) fecha o atendimento (atualiza valor pro total da comanda com consumo + taxa)
+    await sb.from('agendamentos').update({
+      status: 'concluido',
+      valor: total,
+      pago: true,
+      concluido_em: agoraComoDigitosLocais()
+    }).eq('id', a.id);
+
+    const nomeMetodo = { dinheiro: 'dinheiro', pix: 'Pix', credito: 'crédito', debito: 'débito' }[metodo] || metodo;
+    const prefixoPlano = cobertosF.length > 0 ? `Plano cobriu ${cobertosF.map(s=>s.nome).join(', ')}. ` : '';
+    area.innerHTML = tudoCoberto && totalBase === 0
+      ? `<p style="font-size:14px;color:#7FE0A7;text-align:center;">✅ Comanda fechada — plano cobriu todos os serviços.</p>`
+      : metodo === 'dinheiro'
+        ? `<p style="font-size:14px;color:#7FE0A7;text-align:center;">✅ Comanda fechada — ${prefixoPlano}cobrar ${fmtMoeda(total)} em dinheiro.</p>`
+        : `<p style="font-size:14px;color:#7FE0A7;text-align:center;">✅ Comanda fechada — ${prefixoPlano}${fmtMoeda(total)} no ${nomeMetodo}.<br><span style="color:var(--muted);font-size:12px;">Gere o link de cobrança na aba Financeiro ou receba direto na maquininha.</span></p>`;
+    const btnFechar = document.querySelector('.modal-actions button');
+    if (btnFechar) btnFechar.textContent = 'Fechar';
+    renderAgenda();
+  } catch (e) {
+    alert('Não foi possível fechar a comanda. Tente de novo.');
+    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+  }
 }
 
 function abrirModalCobrar(agendamentoId) {
@@ -1166,13 +2082,21 @@ document.getElementById('input-data-agenda').addEventListener('change', (e) => {
 async function mudarStatusAgendamento(id, status) {
   const atual = AGENDA_CACHE.find((x) => x.id === id);
   const atualizacao = { status };
-  if (status === 'concluido' && atual && atual.pago) atualizacao.concluido_em = agoraComoDigitosLocais();
+  if (status === 'concluido') atualizacao.concluido_em = agoraComoDigitosLocais();
   else if (status !== 'concluido') atualizacao.concluido_em = null;
   await sb.from('agendamentos').update(atualizacao).eq('id', id);
   renderAgenda();
 }
 async function removerAgendamento(id) {
-  if (!confirm('Remover este agendamento?')) return;
+  const a = AGENDA_CACHE.find((x) => x.id === id);
+  const ehFalta = a && a.status === 'agendado' && !a.pago;
+  const msg = ehFalta
+    ? 'Esse cliente não compareceu? Ao confirmar, ele será marcado como faltoso e precisará pagar adiantado no próximo agendamento.'
+    : 'Remover este agendamento?';
+  if (!confirm(msg)) return;
+  if (ehFalta && a.cliente_id) {
+    await sb.from('clientes').update({ faltou: true }).eq('id', a.cliente_id);
+  }
   await sb.from('agendamentos').delete().eq('id', id);
   renderAgenda();
 }
@@ -1231,10 +2155,12 @@ async function abrirModalNovoAgendamento() {
 let CLIENTES_CACHE = [];
 let CLIENTES_MAPA = {};
 let ASSINATURAS_MAPA = {};
+let COBRANCAS_PLANO_PENDENTES = {};
 async function renderClientes() {
   const { data: clientes } = await sb.from('clientes').select('*').order('nome');
   const { data: concluidos } = await sb.from('agendamentos').select('cliente_id, data_hora').eq('status', 'concluido');
-  const { data: assinaturas } = await sb.from('assinaturas').select('cliente_id, usos_no_ciclo, ciclo_inicio, planos(nome, limite_mensal, servicos_inclusos)').eq('status', 'ativo');
+  const { data: assinaturas } = await sb.from('assinaturas').select('cliente_id, plano_id, usos_no_ciclo, ciclo_inicio, planos(nome, cor, limite_mensal, servicos_inclusos)').eq('status', 'ativo');
+  const { data: cobrancasPendentes } = await sb.from('cobrancas').select('id, cliente_id, plano_id, valor, metodo, criado_em, planos(nome)').eq('status', 'pendente').not('plano_id', 'is', null);
   CLIENTES_MAPA = {};
   (concluidos||[]).forEach((a) => {
     if (!a.cliente_id) return;
@@ -1244,6 +2170,12 @@ async function renderClientes() {
   });
   ASSINATURAS_MAPA = {};
   (assinaturas||[]).forEach((a) => { ASSINATURAS_MAPA[a.cliente_id] = a; });
+  COBRANCAS_PLANO_PENDENTES = {};
+  (cobrancasPendentes||[]).forEach((c) => {
+    if (!c.cliente_id) return;
+    if (!COBRANCAS_PLANO_PENDENTES[c.cliente_id]) COBRANCAS_PLANO_PENDENTES[c.cliente_id] = [];
+    COBRANCAS_PLANO_PENDENTES[c.cliente_id].push(c);
+  });
   CLIENTES_CACHE = clientes || [];
   document.getElementById('busca-clientes').value = '';
   desenharClientes(CLIENTES_CACHE);
@@ -1257,16 +2189,29 @@ function desenharClientes(lista) {
   document.getElementById('corpo-clientes').innerHTML = lista.length ? lista.map((c) => {
     const info = CLIENTES_MAPA[c.id] || { count: 0, ultima: null };
     const assinatura = ASSINATURAS_MAPA[c.id];
-    const planoTag = assinatura
-      ? `<span class="badge badge-brass">${assinatura.planos.nome}${assinatura.planos.limite_mensal ? ` (${assinatura.usos_no_ciclo}/${assinatura.planos.limite_mensal})` : ' (ilimitado)'}</span>`
-      : '—';
+    let planoTag = '—';
+    if (assinatura) {
+      const cicloInicio = new Date(assinatura.ciclo_inicio + 'T00:00:00');
+      const cicloFim = new Date(cicloInicio.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const hoje = new Date(agoraComoDigitosLocais().slice(0, 10) + 'T00:00:00');
+      const diasRestantes = Math.max(0, Math.round((cicloFim - hoje) / (1000 * 60 * 60 * 24)));
+      let corTag, bgTag;
+      if (diasRestantes >= 15) { corTag = '#22C55E'; bgTag = 'rgba(34,197,94,0.15)'; }
+      else if (diasRestantes >= 6) { corTag = '#F59E0B'; bgTag = 'rgba(245,158,11,0.15)'; }
+      else { corTag = '#FF4D4F'; bgTag = 'rgba(255,77,79,0.15)'; }
+      const usoTxt = assinatura.planos.limite_mensal ? ` (${assinatura.usos_no_ciclo}/${assinatura.planos.limite_mensal})` : ' (ilimitado)';
+      planoTag = `<span class="badge" style="color:${corTag};background:${bgTag};border:none;">${assinatura.planos.nome}${usoTxt}</span> <span style="color:${corTag};font-size:11px;font-weight:600;">${diasRestantes}d restantes</span>`;
+    }
     return `<tr>
-      <td data-label="Nome"><a href="#" style="color:var(--cream);font-weight:600;" onclick="event.preventDefault();abrirModalClientePlano('${c.id}')">${c.nome}</a></td>
+      <td data-label="Nome"><a href="#" style="color:${assinatura && assinatura.planos && assinatura.planos.cor ? assinatura.planos.cor : 'var(--cream)'};font-weight:600;" onclick="event.preventDefault();abrirModalClientePlano('${c.id}')">${c.nome}</a>${c.faltou ? ' <span class="badge" style="background:rgba(255,77,79,0.15);color:#FF4D4F;border:none;font-size:10px;">⚠ Pgto adiantado</span>' : ''}</td>
       <td data-label="Telefone" class="detalhe" style="color:var(--muted);">${c.telefone || '—'}</td>
       <td data-label="Última visita" class="detalhe" style="color:var(--muted);">${info.ultima ? fmtDataCurta(info.ultima) : '—'}</td>
       <td data-label="Histórico" class="detalhe"><span class="badge badge-brass">${info.count} corte(s)</span></td>
       <td data-label="Plano" class="detalhe">${planoTag}</td>
-      <td class="detalhe"><button class="btn btn-danger" onclick="removerCliente('${c.id}')">Remover</button></td>
+      <td class="detalhe" style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn" onclick="abrirModalEditarCliente('${c.id}')">Editar</button>
+        <button class="btn btn-danger" onclick="removerCliente('${c.id}')">Remover</button>
+      </td>
       <td class="col-seta"><button type="button" class="btn-seta" onclick="alternarLinha(this)">Ver detalhes ▾</button></td>
     </tr>`;
   }).join('') : `<tr><td colspan="7" style="color:var(--muted);text-align:center;">Nenhum cliente encontrado</td></tr>`;
@@ -1276,11 +2221,40 @@ function abrirModalClientePlano(clienteId) {
   const assinatura = ASSINATURAS_MAPA[clienteId];
   if (!cliente) return;
 
+  const contatoHtml = `
+    <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin:14px 0;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Telefone</span><strong>${cliente.telefone || '—'}</strong></div>
+      ${cliente.observacoes ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);"><span style="color:var(--muted);display:block;margin-bottom:4px;">Observações</span>${cliente.observacoes}</div>` : ''}
+    </div>`;
+
+  const pendentes = COBRANCAS_PLANO_PENDENTES[clienteId] || [];
+
   if (!assinatura) {
+    const pendentesHtml = pendentes.length ? `
+      <p style="color:var(--brass-soft);font-size:13px;font-weight:600;margin-bottom:8px;">Pagamentos de plano pendentes</p>
+      ${pendentes.map((c) => `
+        <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;font-size:13px;border-left:3px solid #EAB308;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <strong>${c.planos ? c.planos.nome : 'Plano'}</strong>
+            <span style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(c.valor)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--muted);">${c.metodo === 'dinheiro' ? '💵 Dinheiro' : c.metodo === 'pix' ? '◈ Pix' : '💳 Cartão'} · ${fmtDataCurta(c.criado_em)}</span>
+            <button class="btn btn-primary" style="font-size:12px;padding:4px 12px;" onclick="confirmarPagamentoPlano('${c.id}', '${clienteId}')">✓ Confirmar pagamento</button>
+          </div>
+        </div>
+      `).join('')}
+    ` : '';
+
     abrirModal(`
       <h2>${cliente.nome}</h2>
-      <p style="color:var(--muted);font-size:13px;margin-top:10px;">Esse cliente não tem nenhum plano ativo no momento.</p>
-      <div class="modal-actions"><button type="button" class="btn btn-primary" onclick="fecharModal()">Fechar</button></div>
+      ${contatoHtml}
+      ${pendentesHtml}
+      ${!pendentes.length ? `<p style="color:var(--muted);font-size:13px;">Esse cliente não tem nenhum plano ativo no momento.</p>` : ''}
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="fecharModal();abrirModalEditarCliente('${cliente.id}')">Editar</button>
+        <button type="button" class="btn btn-primary" onclick="fecharModal()">Fechar</button>
+      </div>
     `);
     return;
   }
@@ -1292,15 +2266,37 @@ function abrirModalClientePlano(clienteId) {
   abrirModal(`
     <h2>${cliente.nome}</h2>
     <span class="badge badge-brass" style="margin-top:8px;display:inline-block;">${plano.nome}</span>
-    <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin:14px 0;font-size:13px;">
+    ${contatoHtml}
+    <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:13px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:var(--muted);">Uso no mês</span><strong>${limiteTxt}</strong></div>
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Restante</span><strong style="color:var(--brass-soft);">${restantesTxt}</strong></div>
       <div style="color:var(--muted);font-size:12px;margin-top:6px;">Ciclo iniciado em ${fmtDataCurta(assinatura.ciclo_inicio)}</div>
     </div>
     <p style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Serviços inclusos</p>
     <div>${(plano.servicos_inclusos||[]).map((s) => `<span class="badge badge-muted" style="margin:2px 4px 2px 0;">${s}</span>`).join('') || '<span style="color:var(--muted);font-size:13px;">Nenhum serviço específico definido</span>'}</div>
-    <div class="modal-actions"><button type="button" class="btn btn-primary" onclick="fecharModal()">Fechar</button></div>
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="fecharModal();abrirModalEditarCliente('${cliente.id}')">Editar</button>
+      <button type="button" class="btn btn-primary" onclick="fecharModal()">Fechar</button>
+    </div>
   `);
+}
+
+async function confirmarPagamentoPlano(cobrancaId, clienteId) {
+  if (!confirm('Confirmar que recebeu o pagamento e ativar o plano desse cliente?')) return;
+  const { data: cobranca } = await sb.from('cobrancas').select('id, plano_id, cliente_id, owner_id').eq('id', cobrancaId).single();
+  if (!cobranca || !cobranca.plano_id) { alert('Cobrança não encontrada.'); return; }
+  await sb.from('cobrancas').update({ status: 'pago', pago_em: new Date().toISOString() }).eq('id', cobrancaId);
+  await sb.from('assinaturas').upsert({
+    owner_id: cobranca.owner_id,
+    cliente_id: cobranca.cliente_id,
+    plano_id: cobranca.plano_id,
+    status: 'ativo',
+    ciclo_inicio: new Date().toISOString().slice(0, 10),
+    usos_no_ciclo: 0,
+    atualizado_em: new Date().toISOString()
+  }, { onConflict: 'cliente_id' });
+  fecharModal();
+  renderClientes();
 }
 
 async function removerCliente(id) {
@@ -1308,12 +2304,38 @@ async function removerCliente(id) {
   await sb.from('clientes').delete().eq('id', id);
   renderClientes();
 }
-function abrirModalNovoCliente() {
+async function abrirModalEditarCliente(id) {
+  const c = CLIENTES_CACHE.find((x) => x.id === id);
+  if (!c) return;
+  const assinatura = ASSINATURAS_MAPA[id];
+  const planoAtualId = assinatura ? assinatura.plano_id : '';
+  const { data: planosDisponiveis } = await sb.from('planos').select('id, nome').eq('owner_id', UID).eq('ativo', true).order('nome');
+  const opcoesPlano = (planosDisponiveis || []).map((p) =>
+    `<option value="${p.id}" ${p.id === planoAtualId ? 'selected' : ''}>${p.nome}</option>`
+  ).join('');
   abrirModal(`
-    <h2>Novo cliente</h2>
+    <h2>Editar cliente</h2>
     <form id="form-modal">
-      <div><label>Nome</label><input type="text" name="nome" required /></div>
-      <div><label>Telefone</label><input type="text" name="telefone" placeholder="(21) 99999-0000" /></div>
+      <div><label>Nome</label><input type="text" name="nome" value="${(c.nome || '').replace(/"/g, '&quot;')}" required /></div>
+      <div><label>Telefone</label><input type="text" name="telefone" placeholder="(21) 99999-0000" value="${c.telefone || ''}" /></div>
+      <div>
+        <label>Observações</label>
+        <textarea name="observacoes" rows="3" placeholder="Ex: alérgico a tintura, prefere máquina 2..." style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--cream);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:var(--font-body);">${c.observacoes || ''}</textarea>
+      </div>
+      <div>
+        <label>Plano</label>
+        <select name="plano_id" style="width:100%;">
+          <option value="">Sem plano</option>
+          ${opcoesPlano}
+        </select>
+      </div>
+      ${c.faltou ? `<div style="background:rgba(255,77,79,0.1);border:1px solid rgba(255,77,79,0.3);border-radius:var(--radius-sm);padding:10px 12px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#FF9A9C;font-size:13px;">
+          <input type="checkbox" name="faltou" value="1" checked style="accent-color:#FF4D4F;" />
+          ⚠ Bloqueado — exigir pagamento adiantado
+        </label>
+        <p style="color:var(--muted);font-size:11px;margin:4px 0 0 26px;">Desmarque para liberar o agendamento normal deste cliente.</p>
+      </div>` : ''}
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">Salvar</button>
@@ -1323,7 +2345,54 @@ function abrirModalNovoCliente() {
   document.getElementById('form-modal').addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
-    await sb.from('clientes').insert({ owner_id: UID, nome: f.get('nome'), telefone: f.get('telefone') || null });
+    const faltouCheckbox = e.target.querySelector('input[name="faltou"]');
+    const faltouValor = faltouCheckbox ? faltouCheckbox.checked : false;
+    await sb.from('clientes').update({
+      nome: f.get('nome'),
+      telefone: f.get('telefone') || null,
+      observacoes: f.get('observacoes') || null,
+      faltou: faltouValor
+    }).eq('id', id);
+
+    const planoEscolhido = f.get('plano_id');
+    if (planoEscolhido && planoEscolhido !== planoAtualId) {
+      await sb.from('assinaturas').upsert({
+        owner_id: UID,
+        cliente_id: id,
+        plano_id: planoEscolhido,
+        status: 'ativo',
+        ciclo_inicio: new Date().toISOString().slice(0, 10),
+        usos_no_ciclo: 0,
+        atualizado_em: new Date().toISOString()
+      }, { onConflict: 'cliente_id' });
+    } else if (!planoEscolhido && planoAtualId) {
+      await sb.from('assinaturas').update({ status: 'cancelado' }).eq('cliente_id', id);
+    }
+
+    fecharModal();
+    renderClientes();
+  });
+}
+function abrirModalNovoCliente() {
+  abrirModal(`
+    <h2>Novo cliente</h2>
+    <form id="form-modal">
+      <div><label>Nome</label><input type="text" name="nome" required /></div>
+      <div><label>Telefone</label><input type="text" name="telefone" placeholder="(21) 99999-0000" /></div>
+      <div>
+        <label>Observações</label>
+        <textarea name="observacoes" rows="3" placeholder="Ex: alérgico a tintura, prefere máquina 2..." style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--cream);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:var(--font-body);"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    await sb.from('clientes').insert({ owner_id: UID, nome: f.get('nome'), telefone: f.get('telefone') || null, observacoes: f.get('observacoes') || null });
     fecharModal();
     renderClientes();
   });
@@ -1404,20 +2473,25 @@ let LOJAS_CACHE = [];
 let BARBEIROS_PARA_PRODUTOS = [];
 let LOJAS_ABERTAS = {};
 let PEDIDOS_CACHE = [];
+let COMANDA_VENDAS = [];
 
 async function renderProdutos() {
-  const [{ data: produtos }, { data: barbeiros }, { data: lojas }, { data: pedidos }] = await Promise.all([
+  const [{ data: produtos }, { data: barbeiros }, { data: lojas }, { data: pedidos }, { data: comandaItensRaw }] = await Promise.all([
     sb.from('produtos').select('*').order('nome'),
     sb.from('barbeiros').select('id, nome, foto_url').eq('owner_id', UID).eq('ativo', true).order('nome'),
     sb.from('lojas').select('id, barbeiro_id').eq('owner_id', UID),
     sb.from('pedidos')
       .select('id, barbeiro_id, valor_total, status, criado_em, clientes(nome), pedido_itens(quantidade, produto_id, produtos(nome))')
-      .eq('owner_id', UID).order('criado_em', { ascending: false })
+      .eq('owner_id', UID).order('criado_em', { ascending: false }),
+    sb.from('comanda_itens')
+      .select('id, produto_id, quantidade, preco_unitario, agendamento_id, criado_em, produtos(nome), agendamentos!inner(id, data_hora, pago, barbeiro_id, clientes(nome))')
+      .eq('owner_id', UID)
   ]);
   PRODUTOS_CACHE = produtos || [];
   BARBEIROS_PARA_PRODUTOS = barbeiros || [];
   LOJAS_CACHE = lojas || [];
   PEDIDOS_CACHE = pedidos || [];
+  COMANDA_VENDAS = (comandaItensRaw || []).filter((i) => i.agendamentos && i.agendamentos.pago);
 
   const btnCriarLoja = document.getElementById('btn-criar-loja');
   if (btnCriarLoja) btnCriarLoja.style.display = PLANO_UM_BARBEIRO ? 'none' : '';
@@ -1438,6 +2512,24 @@ function badgeStatusPedido(status) {
   if (status === 'cancelado') return '<span class="badge badge-muted">Cancelado</span>';
   return '<span class="badge badge-muted" style="color:#F5B942;">Pendente</span>';
 }
+function agruparVendasComanda(barbeiroId, inicio) {
+  const itens = COMANDA_VENDAS.filter((i) => i.agendamentos && i.agendamentos.barbeiro_id === barbeiroId && i.criado_em >= inicio);
+  const grupos = {};
+  itens.forEach((i) => {
+    const key = i.agendamento_id;
+    if (!grupos[key]) grupos[key] = { tipo: 'comanda', data: i.criado_em, cliente: i.agendamentos.clientes ? i.agendamentos.clientes.nome : '—', lista: [], valor: 0, ids: [] };
+    grupos[key].lista.push(i.quantidade + 'x ' + (i.produtos ? i.produtos.nome : '—'));
+    grupos[key].valor += i.quantidade * Number(i.preco_unitario);
+    grupos[key].ids.push(i.id);
+  });
+  return Object.values(grupos).map((g) => ({ ...g, itens: g.lista.join(', ') }));
+}
+async function excluirVendaComanda(idsJson) {
+  if (!confirm('Excluir esses itens de comanda do histórico?')) return;
+  const ids = JSON.parse(idsJson);
+  for (const id of ids) await sb.from('comanda_itens').delete().eq('id', id);
+  await renderProdutos();
+}
 let PERIODO_VENDAS = 'dia';
 function mudarPeriodoVendas(valor) {
   PERIODO_VENDAS = valor;
@@ -1452,9 +2544,13 @@ function inicioPeriodoVendas() {
 }
 function valorVendidoNoPeriodo(barbeiroId) {
   const inicio = inicioPeriodoVendas();
-  return PEDIDOS_CACHE
+  const pedidos = PEDIDOS_CACHE
     .filter((p) => p.barbeiro_id === barbeiroId && p.status === 'pago' && p.criado_em >= inicio)
     .reduce((s, p) => s + Number(p.valor_total), 0);
+  const comanda = (COMANDA_VENDAS || [])
+    .filter((i) => i.agendamentos && i.agendamentos.barbeiro_id === barbeiroId && i.criado_em >= inicio)
+    .reduce((s, i) => s + Number(i.preco_unitario) * i.quantidade, 0);
+  return pedidos + comanda;
 }
 function totalVendido(produtoId) {
   let total = 0;
@@ -1462,6 +2558,7 @@ function totalVendido(produtoId) {
     if (ped.status !== 'pago') return;
     (ped.pedido_itens || []).forEach((i) => { if (i.produto_id === produtoId) total += i.quantidade; });
   });
+  (COMANDA_VENDAS || []).forEach((i) => { if (i.produto_id === produtoId) total += i.quantidade; });
   return total;
 }
 async function marcarPedidoComoPago(pedidoId) {
@@ -1553,8 +2650,11 @@ function desenharLojas() {
     const barbeiroId = BARBEIROS_PARA_PRODUTOS[0] ? BARBEIROS_PARA_PRODUTOS[0].id : null;
     alvo.innerHTML = `
       <div class="grid grid-3" style="margin-bottom:24px;">
-        ${PRODUTOS_CACHE.map((p) => `
-          <div class="card">
+        ${PRODUTOS_CACHE.map((p) => {
+          const est = Number(p.estoque || 0);
+          const corEst = est <= 4 ? '#EF4444' : est <= 8 ? '#F59E0B' : '#22C55E';
+          return `
+          <div class="card" style="border-left:3px solid ${corEst};">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;">
               <h3 style="color:var(--cream);font-size:16px;">${p.nome}</h3>
               <div style="display:flex;gap:6px;">
@@ -1564,29 +2664,44 @@ function desenharLojas() {
             </div>
             <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:20px;">${fmtMoeda(p.preco)}</span>
             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
-              <span class="badge ${p.estoque > 0 ? 'badge-brass' : 'badge-muted'}">${p.estoque > 0 ? `${p.estoque} em estoque` : 'Sem estoque'}</span>
-              ${totalVendido(p.id) > 0 ? `<span class="badge badge-muted">-${totalVendido(p.id)} vendido(s)</span>` : ''}
+              <span class="badge" style="background:${corEst}22;color:${corEst};border:1px solid ${corEst}44;">${est > 0 ? `${est} em estoque` : 'Sem estoque'}</span>
+              ${totalVendido(p.id) > 0 ? `<span class="badge badge-muted">${totalVendido(p.id)} vendido(s)</span>` : ''}
             </div>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>
       <h3 style="margin-bottom:10px;">Histórico de vendas ${barbeiroId ? `<span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:14px;">${fmtMoeda(valorVendidoNoPeriodo(barbeiroId))}</span>` : ''}</h3>
       ${(() => {
-        const vendas = barbeiroId ? PEDIDOS_CACHE.filter((ped) => ped.barbeiro_id === barbeiroId) : [];
-        if (!vendas.length) return '<p style="color:var(--muted);font-size:13px;">Nenhuma venda registrada ainda.</p>';
-        return `<table class="tabela-responsiva"><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>
-          ${vendas.map((ped) => `
+        const inicio = inicioPeriodoVendas();
+        const vendas = barbeiroId ? PEDIDOS_CACHE.filter((ped) => ped.barbeiro_id === barbeiroId && ped.criado_em >= inicio) : [];
+        const vendasComanda = barbeiroId ? agruparVendasComanda(barbeiroId, inicio) : [];
+        const todasVendas = [...vendas.map((ped) => ({ tipo: 'pedido', data: ped.criado_em, cliente: ped.clientes ? ped.clientes.nome : '—', itens: (ped.pedido_itens||[]).map((i) => i.quantidade + 'x ' + (i.produtos ? i.produtos.nome : '—')).join(', '), valor: Number(ped.valor_total), status: ped.status, id: ped.id })), ...vendasComanda].sort((a, b) => b.data > a.data ? 1 : -1);
+        if (!todasVendas.length) return '<p style="color:var(--muted);font-size:13px;">Nenhuma venda registrada ainda.</p>';
+        return `<table class="tabela-responsiva"><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Valor</th><th>Origem</th><th></th></tr></thead><tbody>
+          ${todasVendas.map((v) => {
+            if (v.tipo === 'pedido') return `
             <tr>
-              <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(ped.criado_em)}</td>
-              <td data-label="Cliente">${ped.clientes ? ped.clientes.nome : '—'}</td>
-              <td data-label="Itens" style="color:var(--muted);">${(ped.pedido_itens || []).map((i) => `${i.quantidade}x ${i.produtos ? i.produtos.nome : '—'}`).join(', ')}</td>
-              <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(ped.valor_total)}</td>
-              <td data-label="Status">${badgeStatusPedido(ped.status)}</td>
+              <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(v.data)}</td>
+              <td data-label="Cliente">${v.cliente}</td>
+              <td data-label="Itens" style="color:var(--muted);">${v.itens}</td>
+              <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(v.valor)}</td>
+              <td data-label="Origem"><span class="badge badge-muted">Loja</span></td>
               <td style="display:flex;gap:6px;flex-wrap:wrap;">
-                ${ped.status === 'pendente' ? `<button class="btn" onclick="marcarPedidoComoPago('${ped.id}')">✓ Marcar pago</button>` : ''}
-                <button class="btn" onclick="abrirModalEditarPedido('${ped.id}')">Editar</button>
-                <button class="btn btn-danger" onclick="removerPedido('${ped.id}')">Excluir</button>
+                ${v.status === 'pendente' ? `<button class="btn" onclick="marcarPedidoComoPago('${v.id}')">✓ Marcar pago</button>` : ''}
+                <button class="btn" onclick="abrirModalEditarPedido('${v.id}')">Editar</button>
+                <button class="btn btn-danger" onclick="removerPedido('${v.id}')">Excluir</button>
               </td>
-            </tr>`).join('')}
+            </tr>`;
+            return `
+            <tr>
+              <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(v.data)}</td>
+              <td data-label="Cliente">${v.cliente}</td>
+              <td data-label="Itens" style="color:var(--muted);">${v.itens}</td>
+              <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(v.valor)}</td>
+              <td data-label="Origem"><span class="badge" style="background:rgba(34,197,94,0.15);color:#22C55E;border:none;">Comanda</span></td>
+              <td><button class="btn btn-danger" onclick="excluirVendaComanda('${JSON.stringify(v.ids).replace(/'/g,"\\'")}')">Excluir</button></td>
+            </tr>`;
+          }).join('')}
         </tbody></table>`;
       })()}
     `;
@@ -1613,8 +2728,11 @@ function desenharLojas() {
           <div class="barber-stripe thin" style="margin:14px 0;"></div>
           <button type="button" class="btn btn-primary" style="margin-bottom:14px;" onclick="event.stopPropagation();abrirModalNovoProduto('${loja.barbeiro_id}')">+ Adicionar produto</button>
           <div class="grid grid-3">
-            ${produtosDaLoja.length ? produtosDaLoja.map((p) => `
-              <div class="card">
+            ${produtosDaLoja.length ? produtosDaLoja.map((p) => {
+              const est = Number(p.estoque || 0);
+              const corEst = est <= 4 ? '#EF4444' : est <= 8 ? '#F59E0B' : '#22C55E';
+              return `
+              <div class="card" style="border-left:3px solid ${corEst};">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                   <h3 style="color:var(--cream);font-size:16px;">${p.nome}</h3>
                   <div style="display:flex;gap:6px;">
@@ -1624,30 +2742,45 @@ function desenharLojas() {
                 </div>
                 <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:20px;">${fmtMoeda(p.preco)}</span>
                 <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
-                  <span class="badge ${p.estoque > 0 ? 'badge-brass' : 'badge-muted'}">${p.estoque > 0 ? `${p.estoque} em estoque` : 'Sem estoque'}</span>
-                  ${totalVendido(p.id) > 0 ? `<span class="badge badge-muted">-${totalVendido(p.id)} vendido(s)</span>` : ''}
+                  <span class="badge" style="background:${corEst}22;color:${corEst};border:1px solid ${corEst}44;">${est > 0 ? `${est} em estoque` : 'Sem estoque'}</span>
+                  ${totalVendido(p.id) > 0 ? `<span class="badge badge-muted">${totalVendido(p.id)} vendido(s)</span>` : ''}
                 </div>
-              </div>`).join('') : '<p style="color:var(--muted);">Nenhum produto nessa loja ainda.</p>'}
+              </div>`;
+            }).join('') : '<p style="color:var(--muted);">Nenhum produto nessa loja ainda.</p>'}
           </div>
           <div class="barber-stripe thin" style="margin:20px 0 14px;"></div>
           <h3 style="margin-bottom:10px;">Histórico de vendas</h3>
           ${(() => {
-            const vendas = PEDIDOS_CACHE.filter((ped) => ped.barbeiro_id === loja.barbeiro_id);
-            if (!vendas.length) return '<p style="color:var(--muted);font-size:13px;">Nenhuma venda registrada ainda.</p>';
-            return `<table class="tabela-responsiva"><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>
-              ${vendas.map((ped) => `
+            const inicioLoja = inicioPeriodoVendas();
+            const vendas = PEDIDOS_CACHE.filter((ped) => ped.barbeiro_id === loja.barbeiro_id && ped.criado_em >= inicioLoja);
+            const vendasComanda = agruparVendasComanda(loja.barbeiro_id, inicioLoja);
+            const todasVendas = [...vendas.map((ped) => ({ tipo: 'pedido', data: ped.criado_em, cliente: ped.clientes ? ped.clientes.nome : '—', itens: (ped.pedido_itens||[]).map((i) => i.quantidade + 'x ' + (i.produtos ? i.produtos.nome : '—')).join(', '), valor: Number(ped.valor_total), status: ped.status, id: ped.id })), ...vendasComanda].sort((a, b) => b.data > a.data ? 1 : -1);
+            if (!todasVendas.length) return '<p style="color:var(--muted);font-size:13px;">Nenhuma venda registrada ainda.</p>';
+            return `<table class="tabela-responsiva"><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Valor</th><th>Origem</th><th></th></tr></thead><tbody>
+              ${todasVendas.map((v) => {
+                if (v.tipo === 'pedido') return `
                 <tr>
-                  <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(ped.criado_em)}</td>
-                  <td data-label="Cliente">${ped.clientes ? ped.clientes.nome : '—'}</td>
-                  <td data-label="Itens" style="color:var(--muted);">${(ped.pedido_itens || []).map((i) => `${i.quantidade}x ${i.produtos ? i.produtos.nome : '—'}`).join(', ')}</td>
-                  <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(ped.valor_total)}</td>
-                  <td data-label="Status">${badgeStatusPedido(ped.status)}</td>
+                  <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(v.data)}</td>
+                  <td data-label="Cliente">${v.cliente}</td>
+                  <td data-label="Itens" style="color:var(--muted);">${v.itens}</td>
+                  <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(v.valor)}</td>
+                  <td data-label="Origem"><span class="badge badge-muted">Loja</span></td>
                   <td style="display:flex;gap:6px;flex-wrap:wrap;">
-                    ${ped.status === 'pendente' ? `<button class="btn" onclick="event.stopPropagation();marcarPedidoComoPago('${ped.id}')">✓ Marcar pago</button>` : ''}
-                    <button class="btn" onclick="event.stopPropagation();abrirModalEditarPedido('${ped.id}')">Editar</button>
-                    <button class="btn btn-danger" onclick="event.stopPropagation();removerPedido('${ped.id}')">Excluir</button>
+                    ${v.status === 'pendente' ? `<button class="btn" onclick="event.stopPropagation();marcarPedidoComoPago('${v.id}')">✓ Marcar pago</button>` : ''}
+                    <button class="btn" onclick="event.stopPropagation();abrirModalEditarPedido('${v.id}')">Editar</button>
+                    <button class="btn btn-danger" onclick="event.stopPropagation();removerPedido('${v.id}')">Excluir</button>
                   </td>
-                </tr>`).join('')}
+                </tr>`;
+                return `
+                <tr>
+                  <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(v.data)}</td>
+                  <td data-label="Cliente">${v.cliente}</td>
+                  <td data-label="Itens" style="color:var(--muted);">${v.itens}</td>
+                  <td data-label="Valor" style="font-family:var(--font-mono);color:var(--brass-soft);">${fmtMoeda(v.valor)}</td>
+                  <td data-label="Origem"><span class="badge" style="background:rgba(34,197,94,0.15);color:#22C55E;border:none;">Comanda</span></td>
+                  <td><button class="btn btn-danger" onclick="event.stopPropagation();excluirVendaComanda('${JSON.stringify(v.ids).replace(/'/g,"\\'")}')">Excluir</button></td>
+                </tr>`;
+              }).join('')}
             </tbody></table>`;
           })()}
         ` : ''}
@@ -1789,12 +2922,14 @@ function desenharPlanosPorBarbeiro() {
       alvo.innerHTML = `<div class="empty-state"><h3>Nenhum plano cadastrado</h3><p>Clique em "+ Novo plano" pra começar.</p></div>`;
       return;
     }
-    alvo.innerHTML = `<div class="grid grid-3">${PLANOS_CACHE.map((p) => `
-      <div class="card">
+    alvo.innerHTML = `<div class="grid grid-3">${PLANOS_CACHE.map((p) => {
+      const corPlano = p.cor || 'var(--brass-soft)';
+      return `
+      <div class="card" style="border-left:4px solid ${corPlano};background:linear-gradient(135deg, ${p.cor ? corPlano + '18' : 'transparent'}, transparent 40%);">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <div>
             <h3 style="color:var(--cream);font-size:16px;">${p.nome}</h3>
-            ${p.badge ? `<span class="badge badge-brass" style="margin-top:4px;">${p.badge}</span>` : ''}
+            ${p.badge ? `<span class="badge" style="margin-top:4px;background:${corPlano}22;color:${corPlano};border:1px solid ${corPlano}44;">${p.badge}</span>` : ''}
           </div>
           <div style="display:flex;gap:6px;">
             <button class="btn" onclick="abrirModalEditarPlano('${p.id}')">Editar</button>
@@ -1802,9 +2937,10 @@ function desenharPlanosPorBarbeiro() {
           </div>
         </div>
         <p style="color:var(--muted);font-size:13px;margin:8px 0;">${p.descricao || ''}</p>
-        <div style="margin-bottom:8px;">${(p.servicos_inclusos||[]).map((s) => `<span class="badge badge-muted" style="margin:2px 4px 2px 0;">${s}</span>`).join('')}</div>
-        <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:20px;">${fmtMoeda(p.preco)}<span style="font-size:12px;color:var(--muted);">/mês</span></span>
-      </div>`).join('')}</div>`;
+        <div style="margin-bottom:8px;">${(p.servicos_inclusos||[]).map((s) => `<span class="badge" style="margin:2px 4px 2px 0;background:${corPlano}15;color:${corPlano};border:1px solid ${corPlano}33;">${s}</span>`).join('')}</div>
+        <span style="font-family:var(--font-mono);color:${corPlano};font-size:20px;">${fmtMoeda(p.preco)}<span style="font-size:12px;color:var(--muted);">/mês</span></span>
+      </div>`;
+    }).join('')}</div>`;
     return;
   }
 
@@ -1828,12 +2964,14 @@ function desenharPlanosPorBarbeiro() {
           <div class="barber-stripe thin" style="margin:14px 0;"></div>
           <button type="button" class="btn btn-primary" style="margin-bottom:14px;" onclick="event.stopPropagation();abrirModalNovoPlano('${b.id}')">+ Adicionar plano</button>
           <div class="grid grid-3">
-            ${planosDoBarbeiro.map((p) => `
-              <div class="card">
+            ${planosDoBarbeiro.map((p) => {
+              const corPlano = p.cor || 'var(--brass-soft)';
+              return `
+              <div class="card" style="border-left:4px solid ${corPlano};background:linear-gradient(135deg, ${p.cor ? corPlano + '18' : 'transparent'}, transparent 40%);">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                   <div>
                     <h3 style="color:var(--cream);font-size:16px;">${p.nome}</h3>
-                    ${p.badge ? `<span class="badge badge-brass" style="margin-top:4px;">${p.badge}</span>` : ''}
+                    ${p.badge ? `<span class="badge" style="margin-top:4px;background:${corPlano}22;color:${corPlano};border:1px solid ${corPlano}44;">${p.badge}</span>` : ''}
                   </div>
                   <div style="display:flex;gap:6px;">
                     <button class="btn" onclick="event.stopPropagation();abrirModalEditarPlano('${p.id}')">Editar</button>
@@ -1841,9 +2979,10 @@ function desenharPlanosPorBarbeiro() {
                   </div>
                 </div>
                 <p style="color:var(--muted);font-size:13px;margin:8px 0;">${p.descricao || ''}</p>
-                <div style="margin-bottom:8px;">${(p.servicos_inclusos||[]).map((s) => `<span class="badge badge-muted" style="margin:2px 4px 2px 0;">${s}</span>`).join('')}</div>
-                <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:20px;">${fmtMoeda(p.preco)}<span style="font-size:12px;color:var(--muted);">/mês</span></span>
-              </div>`).join('')}
+                <div style="margin-bottom:8px;">${(p.servicos_inclusos||[]).map((s) => `<span class="badge" style="margin:2px 4px 2px 0;background:${corPlano}15;color:${corPlano};border:1px solid ${corPlano}33;">${s}</span>`).join('')}</div>
+                <span style="font-family:var(--font-mono);color:${corPlano};font-size:20px;">${fmtMoeda(p.preco)}<span style="font-size:12px;color:var(--muted);">/mês</span></span>
+              </div>`;
+            }).join('')}
           </div>
         ` : ''}
       </div>`;
@@ -1875,6 +3014,14 @@ async function abrirModalNovoPlano(barbeiroIdFixo) {
       <div><label>Preço mensal (R$)</label><input type="number" step="0.01" min="0" name="preco" required /></div>
       <div><label>Limite de usos por mês (deixe em branco pra ilimitado)</label><input type="number" step="1" min="1" name="limite_mensal" /></div>
       <div>
+        <label>Cor do card</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;" id="cor-plano-picker">
+          ${['#D4AF37','#22C55E','#3B82F6','#8B5CF6','#F59E0B','#EF4444','#EC4899','#14B8A6','#F97316','#6366F1','#64748B','#FFFFFF'].map((c) =>
+            `<label style="cursor:pointer;"><input type="radio" name="cor" value="${c}" style="display:none;" /><span style="display:block;width:32px;height:32px;border-radius:8px;background:${c};border:3px solid transparent;transition:border .15s;" onmouseover="this.style.borderColor='var(--cream)'" onmouseout="if(!this.previousElementSibling.checked)this.style.borderColor='transparent'" onclick="this.parentElement.parentElement.querySelectorAll('span').forEach(s=>s.style.borderColor='transparent');this.style.borderColor='var(--cream)'"></span></label>`
+          ).join('')}
+        </div>
+      </div>
+      <div>
         <label>Serviços inclusos</label>
         <div style="max-height:140px;overflow-y:auto;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;">
           ${(servicos||[]).map((s) => `<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;text-transform:none;color:var(--cream);font-size:13px;"><input type="checkbox" name="servico" value="${s.nome}" style="width:auto;" /> ${s.nome}</label>`).join('') || '<span style="color:var(--muted);font-size:13px;">Cadastre serviços primeiro</span>'}
@@ -1898,7 +3045,8 @@ async function abrirModalNovoPlano(barbeiroIdFixo) {
       descricao: f.get('descricao') || null,
       preco: f.get('preco'),
       limite_mensal: f.get('limite_mensal') || null,
-      servicos_inclusos: servicosSelecionados
+      servicos_inclusos: servicosSelecionados,
+      cor: f.get('cor') || null
     });
     if (barbeiroIdFixo) PLANOS_ABERTOS[barbeiroIdFixo] = true;
     fecharModal();
@@ -1922,6 +3070,14 @@ async function abrirModalEditarPlano(id) {
       <div><label>Preço mensal (R$)</label><input type="number" step="0.01" min="0" name="preco" value="${p.preco}" required /></div>
       <div><label>Limite de usos por mês (deixe em branco pra ilimitado)</label><input type="number" step="1" min="1" name="limite_mensal" value="${p.limite_mensal || ''}" /></div>
       <div>
+        <label>Cor do card</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;" id="cor-plano-picker">
+          ${['#D4AF37','#22C55E','#3B82F6','#8B5CF6','#F59E0B','#EF4444','#EC4899','#14B8A6','#F97316','#6366F1','#64748B','#FFFFFF'].map((c) =>
+            `<label style="cursor:pointer;"><input type="radio" name="cor" value="${c}" ${p.cor === c ? 'checked' : ''} style="display:none;" /><span style="display:block;width:32px;height:32px;border-radius:8px;background:${c};border:3px solid ${p.cor === c ? 'var(--cream)' : 'transparent'};transition:border .15s;" onmouseover="this.style.borderColor='var(--cream)'" onmouseout="if(!this.previousElementSibling.checked)this.style.borderColor='transparent'" onclick="this.parentElement.parentElement.querySelectorAll('span').forEach(s=>s.style.borderColor='transparent');this.style.borderColor='var(--cream)'"></span></label>`
+          ).join('')}
+        </div>
+      </div>
+      <div>
         <label>Serviços inclusos</label>
         <div style="max-height:140px;overflow-y:auto;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;">
           ${(servicos||[]).map((s) => `<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;text-transform:none;color:var(--cream);font-size:13px;"><input type="checkbox" name="servico" value="${s.nome}" style="width:auto;" ${inclusos.includes(s.nome) ? 'checked' : ''} /> ${s.nome}</label>`).join('') || '<span style="color:var(--muted);font-size:13px;">Cadastre serviços primeiro</span>'}
@@ -1944,7 +3100,8 @@ async function abrirModalEditarPlano(id) {
       descricao: f.get('descricao') || null,
       preco: f.get('preco'),
       limite_mensal: f.get('limite_mensal') || null,
-      servicos_inclusos: servicosSelecionados
+      servicos_inclusos: servicosSelecionados,
+      cor: f.get('cor') || null
     }).eq('id', id);
     fecharModal();
     renderPlanos();
@@ -2011,6 +3168,19 @@ async function abrirModalNovoBarbeiro() {
         `);
         return;
       }
+    }
+  } else if (PLANO_UM_BARBEIRO) {
+    const { count } = await sb.from('barbeiros').select('id', { count: 'exact', head: true }).eq('owner_id', UID).eq('ativo', true);
+    if (count >= 1) {
+      abrirModal(`
+        <h2>Limite do Plano Bronze</h2>
+        <p style="color:var(--muted);font-size:13px;margin-top:10px;">O Plano Bronze permite apenas 1 barbeiro ativo. Para cadastrar mais, assine um plano superior.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" onclick="fecharModal(); abrirModalRenovarPlano();">Ver planos</button>
+          <button type="button" class="btn btn-ghost" onclick="fecharModal()">Fechar</button>
+        </div>
+      `);
+      return;
     }
   }
   abrirModal(`
@@ -2103,6 +3273,322 @@ function abrirModalEditarBarbeiro(id) {
   });
 }
 
+/* ---------- ASSINATURAS ---------- */
+async function renderAssinaturas() {
+  const hoje = new Date(agoraComoDigitosLocais().slice(0, 10) + 'T00:00:00');
+  const inicioMes = agoraComoDigitosLocais().slice(0, 7) + '-01';
+
+  const { data: meusClientes } = await sb.from('clientes').select('id, nome, telefone').eq('owner_id', UID);
+  const clienteIds = (meusClientes || []).map((c) => c.id);
+  const clienteMapa = {};
+  (meusClientes || []).forEach((c) => { clienteMapa[c.id] = c; });
+
+  if (!clienteIds.length) {
+    document.getElementById('assinaturas-cards').innerHTML = '<p style="color:var(--muted);text-align:center;">Nenhum cliente cadastrado.</p>';
+    document.getElementById('assinaturas-lista').innerHTML = '';
+    return;
+  }
+
+  const [{ data: todasAssins }, { data: planosDisp }, { data: cobrancasMes }] = await Promise.all([
+    sb.from('assinaturas').select('id, cliente_id, plano_id, status, ciclo_inicio, usos_no_ciclo, planos(nome, preco, limite_mensal)').in('cliente_id', clienteIds),
+    sb.from('planos').select('id, nome').eq('owner_id', UID).eq('ativo', true).order('nome'),
+    sb.from('cobrancas').select('id, valor, status, plano_id').eq('owner_id', UID).not('plano_id', 'is', null).gte('criado_em', inicioMes + 'T00:00:00')
+  ]);
+  (todasAssins || []).forEach((a) => { a.clientes = clienteMapa[a.cliente_id] || null; });
+
+  const lista = todasAssins || [];
+  const ativas = lista.filter((a) => a.status === 'ativo');
+  const totalAtivas = ativas.length;
+
+  const receitaMes = (cobrancasMes || []).filter((c) => c.status === 'pago').reduce((s, c) => s + Number(c.valor || 0), 0);
+  const ticketMedio = totalAtivas > 0 ? receitaMes / totalAtivas : 0;
+
+  const pagasMes = (cobrancasMes || []).filter((c) => c.status === 'pago' && c.plano_id).length;
+
+  let aVencer = 0;
+  let vencidas = 0;
+  ativas.forEach((a) => {
+    const cicloInicio = new Date(a.ciclo_inicio + 'T00:00:00');
+    const cicloFim = new Date(cicloInicio.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const dias = Math.round((cicloFim - hoje) / (1000 * 60 * 60 * 24));
+    if (dias <= 7 && dias >= 0) aVencer++;
+    if (dias < 0) vencidas++;
+  });
+
+  const contagemPlanos = {};
+  ativas.forEach((a) => {
+    const nome = a.planos ? a.planos.nome : 'Sem plano';
+    contagemPlanos[nome] = (contagemPlanos[nome] || 0) + 1;
+  });
+  let topPlanoNome = '—', topPlanoQtd = 0;
+  Object.entries(contagemPlanos).forEach(([nome, qtd]) => {
+    if (qtd > topPlanoQtd) { topPlanoNome = nome; topPlanoQtd = qtd; }
+  });
+
+  const pctAVencer = totalAtivas > 0 ? ((aVencer / totalAtivas) * 100).toFixed(1) : '0.0';
+  const pctVencidas = totalAtivas > 0 ? ((vencidas / totalAtivas) * 100).toFixed(1) : '0.0';
+  const pctPagas = totalAtivas > 0 ? ((pagasMes / totalAtivas) * 100).toFixed(1) : '0.0';
+
+  document.getElementById('assinaturas-cards').innerHTML = `
+    <div class="grid grid-2" style="margin-bottom:16px;">
+      <div class="card" style="background:linear-gradient(135deg,#1a2a4a,#223366);border:1px solid rgba(59,130,246,0.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="color:rgba(147,197,253,0.9);font-size:13px;font-weight:600;">Ativas</span>
+          <span style="font-size:18px;">📊</span>
+        </div>
+        <div style="font-family:var(--font-display);font-size:28px;color:#93C5FD;font-weight:700;">${totalAtivas} <span style="font-size:14px;color:var(--muted);font-weight:400;">de ${lista.length}</span></div>
+        <div style="background:rgba(59,130,246,0.2);border-radius:4px;height:6px;margin-top:8px;"><div style="background:#3B82F6;height:100%;border-radius:4px;width:${lista.length ? (totalAtivas / lista.length * 100) : 0}%;"></div></div>
+        <div style="color:var(--muted);font-size:12px;margin-top:4px;">${lista.length ? ((totalAtivas / lista.length) * 100).toFixed(1) : '0.0'}%</div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#1a3a2a,#1e4d3a);border:1px solid rgba(34,197,94,0.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="color:rgba(134,239,172,0.9);font-size:13px;font-weight:600;">Receita</span>
+          <span style="font-size:18px;">💰</span>
+        </div>
+        <div style="font-family:var(--font-display);font-size:28px;color:#86EFAC;font-weight:700;">${fmtMoeda(receitaMes)}</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:8px;">Ticket Médio <span style="color:#86EFAC;font-weight:600;">${fmtMoeda(ticketMedio)}</span></div>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-bottom:16px;">
+      <div class="card" style="background:linear-gradient(135deg,#3a2a1a,#4d3d1e);border:1px solid rgba(250,204,21,0.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="color:rgba(253,224,71,0.9);font-size:13px;font-weight:600;">A Vencer</span>
+          <span style="font-size:18px;">⚠️</span>
+        </div>
+        <div style="font-family:var(--font-display);font-size:28px;color:#FDE047;font-weight:700;">${aVencer} <span style="font-size:14px;color:var(--muted);font-weight:400;">em 7 dias</span></div>
+        <div style="color:var(--muted);font-size:12px;margin-top:8px;">% das ativas <span style="color:#FDE047;font-weight:600;">${pctAVencer}%</span></div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#3a1a1a,#4d1e1e);border:1px solid rgba(255,77,79,0.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="color:rgba(255,150,150,0.9);font-size:13px;font-weight:600;">Vencidas</span>
+          <span style="font-size:18px;">🔴</span>
+        </div>
+        <div style="font-family:var(--font-display);font-size:28px;color:#FF9A9C;font-weight:700;">${vencidas} <span style="font-size:14px;color:var(--muted);font-weight:400;">atrasadas</span></div>
+        <div style="color:var(--muted);font-size:12px;margin-top:8px;">% das ativas <span style="color:#FF9A9C;font-weight:600;">${pctVencidas}%</span></div>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-bottom:16px;">
+      <div class="card" style="background:linear-gradient(135deg,#1a3a2a,#1e4d3a);border:1px solid rgba(34,197,94,0.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="color:rgba(134,239,172,0.9);font-size:13px;font-weight:600;">Pagas</span>
+          <span style="font-size:18px;">✅</span>
+        </div>
+        <div style="font-family:var(--font-display);font-size:28px;color:#86EFAC;font-weight:700;">${pagasMes} <span style="font-size:14px;color:var(--muted);font-weight:400;">este mês</span></div>
+        <div style="color:var(--muted);font-size:12px;margin-top:8px;">% das ativas <span style="color:#86EFAC;font-weight:600;">${pctPagas}%</span></div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,#2a1a3a,#3d2066);border:1px solid rgba(168,85,247,0.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="color:rgba(216,180,254,0.9);font-size:13px;font-weight:600;">Top Plano</span>
+          <span style="font-size:18px;">👑</span>
+        </div>
+        <div style="font-family:var(--font-display);font-size:28px;color:#D8B4FE;font-weight:700;">${topPlanoQtd} <span style="font-size:14px;color:var(--muted);font-weight:400;">assinantes</span></div>
+        <div style="color:#D8B4FE;font-size:12px;margin-top:8px;font-weight:600;">${topPlanoNome}</div>
+      </div>
+    </div>
+  `;
+
+  // Lista de assinantes com vencimento próximo
+  const proximosVencer = ativas.filter((a) => {
+    const cicloFim = new Date(new Date(a.ciclo_inicio + 'T00:00:00').getTime() + 30 * 24 * 60 * 60 * 1000);
+    const dias = Math.round((cicloFim - hoje) / (1000 * 60 * 60 * 24));
+    return dias <= 7 && dias >= 0;
+  }).sort((a, b) => {
+    const fimA = new Date(a.ciclo_inicio + 'T00:00:00').getTime() + 30 * 86400000;
+    const fimB = new Date(b.ciclo_inicio + 'T00:00:00').getTime() + 30 * 86400000;
+    return fimA - fimB;
+  });
+
+  document.getElementById('assinaturas-lista').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h3 style="display:flex;align-items:center;gap:8px;">⚠️ A Vencer</h3>
+        <span class="badge" style="background:rgba(250,204,21,0.15);color:#FDE047;border:none;">7 dias</span>
+      </div>
+      ${proximosVencer.length ? `<table class="tabela-responsiva"><thead><tr><th>Cliente</th><th>Plano</th><th>Dias restantes</th><th></th></tr></thead><tbody>
+        ${proximosVencer.map((a) => {
+          const cicloFim = new Date(new Date(a.ciclo_inicio + 'T00:00:00').getTime() + 30 * 86400000);
+          const dias = Math.max(0, Math.round((cicloFim - hoje) / 86400000));
+          const corDias = dias <= 3 ? '#FF4D4F' : '#FDE047';
+          const tel = a.clientes && a.clientes.telefone ? a.clientes.telefone.replace(/\\D/g, '') : '';
+          const nomeCliente = a.clientes ? a.clientes.nome.split(' ')[0] : 'cliente';
+          const nomePlano = a.planos ? a.planos.nome : 'seu plano';
+          const nomeLoja = PERFIL.nome_barbearia || 'nossa barbearia';
+          const msgWpp = encodeURIComponent('Olá ' + nomeCliente + '! 👋\\n\\nPassando pra te lembrar que o seu plano *' + nomePlano + '* na *' + nomeLoja + '* vence em *' + dias + ' dia(s)*.\\n\\nRenove pra continuar aproveitando todos os benefícios! 💈\\n\\nQualquer dúvida, é só chamar. 😉');
+          return `<tr>
+            <td data-label="Cliente">${a.clientes ? a.clientes.nome : '—'}</td>
+            <td data-label="Plano"><span class="badge" style="background:rgba(168,85,247,0.15);color:#D8B4FE;border:none;">${a.planos ? a.planos.nome : '—'}</span></td>
+            <td data-label="Dias" style="font-family:var(--font-mono);color:${corDias};font-weight:600;">${dias}d</td>
+            <td data-label="">${tel ? `<button class="btn" style="background:#25D366;color:#fff;padding:4px 12px;font-size:12px;white-space:nowrap;" onclick="window.open('https://wa.me/55${tel}?text=${msgWpp}','_blank')">📲 Lembrar</button>` : '<span style="color:var(--muted);font-size:12px;">Sem telefone</span>'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody></table>` : '<div style="text-align:center;padding:20px;"><div style="font-size:32px;margin-bottom:8px;">✅</div><p style="color:var(--muted);">Não há assinaturas com vencimento próximo.</p></div>'}
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-bottom:14px;">Todos os assinantes ativos</h3>
+      ${ativas.length ? `<table class="tabela-responsiva"><thead><tr><th>Cliente</th><th>Plano</th><th>Dias restantes</th><th>Usos</th><th>Início ciclo</th></tr></thead><tbody>
+        ${ativas.map((a) => {
+          const cicloFim = new Date(new Date(a.ciclo_inicio + 'T00:00:00').getTime() + 30 * 86400000);
+          const dias = Math.max(0, Math.round((cicloFim - hoje) / 86400000));
+          let corTag, bgTag;
+          if (dias >= 15) { corTag = '#22C55E'; bgTag = 'rgba(34,197,94,0.15)'; }
+          else if (dias >= 6) { corTag = '#F59E0B'; bgTag = 'rgba(245,158,11,0.15)'; }
+          else { corTag = '#FF4D4F'; bgTag = 'rgba(255,77,79,0.15)'; }
+          const usoTxt = a.planos && a.planos.limite_mensal ? a.usos_no_ciclo + '/' + a.planos.limite_mensal : a.usos_no_ciclo + ' (ilim.)';
+          return `<tr>
+            <td data-label="Cliente"><strong>${a.clientes ? a.clientes.nome : '—'}</strong></td>
+            <td data-label="Plano"><span class="badge" style="color:${corTag};background:${bgTag};border:none;">${a.planos ? a.planos.nome : '—'}</span></td>
+            <td data-label="Dias" style="font-family:var(--font-mono);color:${corTag};font-weight:600;">${dias}d</td>
+            <td data-label="Usos" style="font-family:var(--font-mono);color:var(--muted);">${usoTxt}</td>
+            <td data-label="Início" style="color:var(--muted);">${fmtDataCurta(a.ciclo_inicio)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody></table>` : '<p style="color:var(--muted);text-align:center;">Nenhuma assinatura ativa.</p>'}
+    </div>
+  `;
+}
+
+async function abrirModalNovaAssinatura() {
+  const [{ data: clientes }, { data: planos }] = await Promise.all([
+    sb.from('clientes').select('id, nome, telefone').eq('owner_id', UID).order('nome'),
+    sb.from('planos').select('id, nome').eq('owner_id', UID).eq('ativo', true).order('nome')
+  ]);
+  abrirModal(`
+    <h2>Nova assinatura</h2>
+    <form id="form-modal">
+      <div><label>Cliente</label><select name="cliente_id" required style="width:100%;">
+        <option value="">Selecione...</option>
+        ${(clientes||[]).map((c) => `<option value="${c.id}">${c.nome} — ${c.telefone||'sem tel'}</option>`).join('')}
+      </select></div>
+      <div><label>Plano</label><select name="plano_id" required style="width:100%;">
+        <option value="">Selecione...</option>
+        ${(planos||[]).map((p) => `<option value="${p.id}">${p.nome}</option>`).join('')}
+      </select></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Ativar assinatura</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('form-modal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const clienteId = f.get('cliente_id');
+    const planoId = f.get('plano_id');
+    if (!clienteId || !planoId) return;
+    await sb.from('assinaturas').upsert({
+      owner_id: UID,
+      cliente_id: clienteId,
+      plano_id: planoId,
+      status: 'ativo',
+      ciclo_inicio: new Date().toISOString().slice(0, 10),
+      usos_no_ciclo: 0,
+      atualizado_em: new Date().toISOString()
+    }, { onConflict: 'cliente_id' });
+    fecharModal();
+    renderAssinaturas();
+  });
+}
+
+/* ---------- FILA ---------- */
+async function renderFila() {
+  const data = document.getElementById('input-data-fila').value;
+  if (!data) return;
+
+  const { data: agendamentos } = await sb.from('agendamentos')
+    .select('id, cliente_id, data_hora, duracao_min, valor, status, pago, clientes(nome, telefone), barbeiros(nome, foto_url), servicos!agendamentos_servico_id_fkey(nome), agendamento_servicos(servicos(nome)), cobrancas(metodo, status)')
+    .gte('data_hora', data + 'T00:00:00')
+    .lte('data_hora', data + 'T23:59:59')
+    .order('data_hora');
+
+  const lista = (agendamentos || []).filter((a) => a.status !== 'cancelado');
+
+  const clienteIds = [...new Set(lista.map((a) => a.cliente_id).filter(Boolean))];
+  const assinaturasFila = {};
+  if (clienteIds.length) {
+    const { data: assins } = await sb.from('assinaturas').select('cliente_id, planos(nome, cor, servicos_inclusos)').eq('status', 'ativo').in('cliente_id', clienteIds);
+    (assins || []).forEach((a) => { assinaturasFila[a.cliente_id] = a; });
+  }
+  const { data: catalogoServicos } = await sb.from('servicos').select('nome, preco').eq('owner_id', UID);
+  const mapaPrecoFila = {};
+  (catalogoServicos || []).forEach((s) => { mapaPrecoFila[s.nome] = Number(s.preco || 0); });
+  const alvo = document.getElementById('corpo-fila');
+
+  if (!lista.length) {
+    alvo.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;">Nenhum agendamento para este dia.</p>';
+    return;
+  }
+
+  alvo.innerHTML = lista.map((a, i) => {
+    const hora = a.data_hora.slice(11, 16);
+    const clienteNome = a.clientes ? a.clientes.nome : '—';
+    const barbeiro = a.barbeiros ? a.barbeiros.nome : '—';
+    const foto = a.barbeiros && a.barbeiros.foto_url ? a.barbeiros.foto_url : '';
+    const servicos = nomesServicosDe(a);
+    const duracao = a.duracao_min ? `${a.duracao_min} min` : '';
+    const temPlano = a.cliente_id && assinaturasFila[a.cliente_id];
+    const planoNome = temPlano ? assinaturasFila[a.cliente_id].planos.nome : '';
+    const corPlanoFila = temPlano && assinaturasFila[a.cliente_id].planos.cor ? assinaturasFila[a.cliente_id].planos.cor : null;
+    const inclusosFila = temPlano ? (assinaturasFila[a.cliente_id].planos.servicos_inclusos || []) : [];
+    const nomesSvcFila = (a.agendamento_servicos && a.agendamento_servicos.length)
+      ? a.agendamento_servicos.map((x) => x.servicos ? x.servicos.nome : null).filter(Boolean)
+      : (a.servicos ? [a.servicos.nome] : []);
+    let valorExibido;
+    let coberturaHtml = '';
+    if (temPlano && !a.pago) {
+      const cobertos = [];
+      const naoCobertos = [];
+      nomesSvcFila.forEach((nome) => {
+        const coberto = inclusosFila.length === 0 || inclusosFila.includes(nome);
+        if (coberto) cobertos.push(nome);
+        else naoCobertos.push({ nome, preco: mapaPrecoFila[nome] || 0 });
+      });
+      valorExibido = naoCobertos.reduce((s, x) => s + x.preco, 0);
+      if (cobertos.length || naoCobertos.length) {
+        const linhas = [];
+        if (cobertos.length) linhas.push(`<span style="color:#22C55E;">✓ ${cobertos.join(', ')} — plano</span>`);
+        naoCobertos.forEach((x) => linhas.push(`<span style="color:#F59E0B;">✗ ${x.nome} — ${fmtMoeda(x.preco)}</span>`));
+        coberturaHtml = `<div style="display:flex;flex-direction:column;gap:2px;margin-top:4px;font-size:11px;">${linhas.join('')}</div>`;
+      }
+    } else {
+      valorExibido = a.valor;
+    }
+    const formaPgto = a.pago ? (() => { const cp = (a.cobrancas||[]).filter(c=>c.status==='pago'); const tp = cp.some(c=>c.metodo==='plano'); const rl = cp.find(c=>c.metodo&&c.metodo!=='plano'); if (tp && rl) return 'Plano + ' + (NOME_METODO_PAGAMENTO[rl.metodo]||rl.metodo); const co = rl||cp[0]||(a.cobrancas||[])[0]; return co && co.metodo ? (NOME_METODO_PAGAMENTO[co.metodo]||co.metodo) : 'Dinheiro'; })() : '';
+
+    let statusCor, statusTxt;
+    if (a.status === 'concluido') { statusCor = '#22C55E'; statusTxt = 'Concluído'; }
+    else if (a.pago) { statusCor = '#22C55E'; statusTxt = 'Pago'; }
+    else { statusCor = '#F59E0B'; statusTxt = 'Aguardando'; }
+
+    const posicao = i + 1;
+
+    return `
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 0;${i > 0 ? 'border-top:1px solid var(--border);' : ''}">
+        <div style="min-width:36px;height:36px;border-radius:50%;background:${a.status === 'concluido' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)'};display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:16px;color:${statusCor};">${posicao}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <strong style="font-size:15px;${corPlanoFila ? 'color:'+corPlanoFila+';' : ''}">${clienteNome}</strong>
+            <span style="font-family:var(--font-mono);font-size:13px;color:var(--brass-soft);">${hora}</span>
+            <span style="font-size:11px;color:${statusCor};font-weight:600;text-transform:uppercase;">${statusTxt}</span>
+            ${temPlano ? `<span class="badge" style="font-size:10px;color:${corPlanoFila || '#22C55E'};background:${corPlanoFila ? corPlanoFila+'22' : 'rgba(34,197,94,0.15)'};border:none;">${planoNome}</span>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            ${foto ? `<img src="${foto}" alt="${barbeiro}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;" />` : ''}
+            <span style="color:var(--muted);font-size:13px;">${barbeiro}</span>
+            <span style="color:var(--muted);font-size:12px;">·</span>
+            <span style="color:var(--muted);font-size:13px;">${servicos}</span>
+            ${duracao ? `<span style="color:var(--muted);font-size:12px;">· ${duracao}</span>` : ''}
+          </div>
+          ${coberturaHtml}
+        </div>
+        <div style="text-align:right;white-space:nowrap;">
+          <div style="font-family:var(--font-mono);font-size:15px;color:${temPlano && !a.pago ? '#22C55E' : 'var(--brass-soft)'};font-weight:600;">${fmtMoeda(valorExibido)}</div>
+          ${formaPgto ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">${formaPgto}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
 /* ---------- FINANCEIRO ---------- */
 async function renderFinanceiro() {
   document.getElementById('input-mes-financeiro').value = mesFinanceiroAtual;
@@ -2117,30 +3603,161 @@ async function renderFinanceiro() {
   ]);
   const entradas = entradasRaw || [];
   const saidas = saidasRaw || [];
-  const totalEntradas = entradas.reduce((s,a) => s + Number(a.valor||0), 0);
-  const totalSaidas = saidas.reduce((s,d) => s + Number(d.valor||0), 0);
+
+  let comandasPorAgendamento = {};
+  if (entradas.length) {
+    const { data: itensComanda } = await sb.from('comanda_itens')
+      .select('agendamento_id, quantidade, preco_unitario, produtos(nome)')
+      .in('agendamento_id', entradas.map((a) => a.id));
+    (itensComanda || []).forEach((i) => {
+      if (!comandasPorAgendamento[i.agendamento_id]) comandasPorAgendamento[i.agendamento_id] = [];
+      comandasPorAgendamento[i.agendamento_id].push(i);
+    });
+  }
+
+  const taxas = PERFIL.taxas_pagamento || {};
+
+  const lancamentos = [
+    ...entradas.map((a) => {
+      const itensComanda = comandasPorAgendamento[a.id] || [];
+      const forma = formaPagamentoDe(a);
+      const metodoTaxa = forma === 'Crédito' ? 'credito' : forma === 'Débito' ? 'debito' : forma === 'Cartão' ? 'credito' : forma === 'Pix' ? 'pix' : '';
+      const taxaPct = metodoTaxa ? Number(taxas[metodoTaxa] || 0) : 0;
+      const valorConsumo = itensComanda.reduce((s, i) => s + Number(i.preco_unitario) * i.quantidade, 0);
+
+      let total, valorServico, valorTaxa;
+      if (a.pago) {
+        total = Number(a.valor || 0);
+        const baseTotal = taxaPct > 0 ? Math.round(total * 10000 / (100 + taxaPct)) / 100 : total;
+        valorTaxa = Math.round((total - baseTotal) * 100) / 100;
+        valorServico = Math.round((baseTotal - valorConsumo) * 100) / 100;
+      } else {
+        valorServico = Number(a.valor || 0);
+        const subtotal = valorServico + valorConsumo;
+        valorTaxa = taxaPct > 0 ? Math.round(subtotal * taxaPct) / 100 : 0;
+        total = Math.round((subtotal + valorTaxa) * 100) / 100;
+      }
+
+      const cliente = a.clientes ? a.clientes.nome : 'Cliente';
+      const desc = `${nomesServicosDe(a)}${itensComanda.length ? ` + ${itensComanda.length} item(ns)` : ''} — ${cliente}`;
+
+      const detalhes = [];
+      detalhes.push(`Serviço: ${nomesServicosDe(a)} — ${fmtMoeda(valorServico)}`);
+      itensComanda.forEach((i) => {
+        detalhes.push(`${i.quantidade}x ${i.produtos ? i.produtos.nome : 'produto'} — ${fmtMoeda(Number(i.preco_unitario) * i.quantidade)}`);
+      });
+      if (taxaPct > 0) detalhes.push(`Taxa ${metodoTaxa} ${taxaPct}%: +${fmtMoeda(valorTaxa)}`);
+
+      return { id: a.id, tabela: 'agendamento', data: a.concluido_em.slice(0,10), desc, tipo: 'entrada', valor: total, forma, detalhes };
+    }),
+    ...saidas.map((d) => ({ id: d.id, tabela: 'despesa', data: d.data, desc: d.descricao, tipo: 'saida', valor: Number(d.valor||0), forma: '—', detalhes: [] }))
+  ].sort((a,b) => b.data.localeCompare(a.data));
+
+  const totalEntradas = lancamentos.filter((l) => l.tipo === 'entrada').reduce((s, l) => s + l.valor, 0);
+  const totalSaidas = lancamentos.filter((l) => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0);
 
   document.getElementById('f-entradas').textContent = fmtMoeda(totalEntradas);
   document.getElementById('f-saidas').textContent = fmtMoeda(totalSaidas);
   document.getElementById('f-saldo').textContent = fmtMoeda(totalEntradas - totalSaidas);
+  document.getElementById('f-cortes-mes').textContent = entradas.length;
 
-  const lancamentos = [
-    ...entradas.map((a) => ({ id: a.id, tabela: 'agendamento', data: a.concluido_em.slice(0,10), desc: `${nomesServicosDe(a)} — ${a.clientes?a.clientes.nome:'Cliente'}`, tipo: 'entrada', valor: Number(a.valor||0), forma: formaPagamentoDe(a) })),
-    ...saidas.map((d) => ({ id: d.id, tabela: 'despesa', data: d.data, desc: d.descricao, tipo: 'saida', valor: Number(d.valor||0), forma: '—' }))
-  ].sort((a,b) => b.data.localeCompare(a.data));
+  const hojeISO = agoraComoDigitosLocais().slice(0,10);
+  const dHoje = new Date(hojeISO + 'T12:00:00');
+  const diaSem = dHoje.getDay();
+  const diffSeg = diaSem === 0 ? 6 : diaSem - 1;
+  const dSeg = new Date(dHoje); dSeg.setDate(dHoje.getDate() - diffSeg);
+  const inicioSemana = dSeg.toISOString().slice(0, 10);
+  const [{ data: fatSemData }, { data: despSemData }] = await Promise.all([
+    sb.from('agendamentos').select('valor').eq('status', 'concluido').eq('pago', true).not('concluido_em', 'is', null).gte('concluido_em', inicioSemana + 'T00:00:00').lte('concluido_em', hojeISO + 'T23:59:59'),
+    sb.from('despesas').select('valor').gte('data', inicioSemana).lte('data', hojeISO)
+  ]);
+  const fatSemana = (fatSemData||[]).reduce((s,a) => s + Number(a.valor||0), 0);
+  const saidasSemana = (despSemData||[]).reduce((s,d) => s + Number(d.valor||0), 0);
+  const saldoSemana = fatSemana - saidasSemana;
+  document.getElementById('f-fat-semana').textContent = fmtMoeda(fatSemana);
+  document.getElementById('f-saidas-semana').textContent = fmtMoeda(saidasSemana);
+  document.getElementById('f-saldo-semana').textContent = fmtMoeda(saldoSemana);
+  document.getElementById('f-saldo-semana').style.color = saldoSemana >= 0 ? '#86EFAC' : '#FCA5A5';
+
+  const graficoData = [
+    { label: 'Semana', entrada: fatSemana, saida: saidasSemana },
+    { label: 'Mês', entrada: totalEntradas, saida: totalSaidas }
+  ];
+  const maxVal = Math.max(...graficoData.map(g => Math.max(g.entrada, g.saida)), 1);
+  document.getElementById('f-grafico-entradas-saidas').innerHTML = `
+    <h3 style="margin-bottom:14px;">Entradas x Saídas</h3>
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);"><span style="width:12px;height:12px;border-radius:3px;background:#22C55E;"></span> Entradas</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);"><span style="width:12px;height:12px;border-radius:3px;background:#EF4444;"></span> Saídas</span>
+    </div>
+    ${graficoData.map(g => {
+      const pctE = Math.round((g.entrada / maxVal) * 100);
+      const pctS = Math.round((g.saida / maxVal) * 100);
+      return `
+      <div style="margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-family:var(--font-display);color:var(--cream);font-size:14px;font-weight:600;">${g.label}</span>
+          <span style="font-family:var(--font-mono);color:var(--muted);font-size:12px;">Saldo: <span style="color:${g.entrada - g.saida >= 0 ? '#22C55E' : '#EF4444'};font-weight:600;">${fmtMoeda(g.entrada - g.saida)}</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="width:16px;font-size:11px;color:#22C55E;">▲</span>
+          <div style="flex:1;height:22px;background:var(--surface-2);border-radius:6px;overflow:hidden;">
+            <div style="height:100%;width:${pctE}%;background:linear-gradient(90deg,#22C55E,#16A34A);border-radius:6px;transition:width .5s;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;">
+              ${pctE > 15 ? `<span style="font-family:var(--font-mono);font-size:11px;color:#fff;font-weight:600;">${fmtMoeda(g.entrada)}</span>` : ''}
+            </div>
+          </div>
+          ${pctE <= 15 ? `<span style="font-family:var(--font-mono);font-size:11px;color:#22C55E;">${fmtMoeda(g.entrada)}</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="width:16px;font-size:11px;color:#EF4444;">▼</span>
+          <div style="flex:1;height:22px;background:var(--surface-2);border-radius:6px;overflow:hidden;">
+            <div style="height:100%;width:${pctS}%;background:linear-gradient(90deg,#EF4444,#DC2626);border-radius:6px;transition:width .5s;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;">
+              ${pctS > 15 ? `<span style="font-family:var(--font-mono);font-size:11px;color:#fff;font-weight:600;">${fmtMoeda(g.saida)}</span>` : ''}
+            </div>
+          </div>
+          ${pctS <= 15 ? `<span style="font-family:var(--font-mono);font-size:11px;color:#EF4444;">${fmtMoeda(g.saida)}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('')}
+  `;
 
   document.getElementById('corpo-financeiro').innerHTML = lancamentos.length ? lancamentos.map((l) => `
-    <tr>
+    <tr style="cursor:pointer;" onclick="abrirDetalheFinanceiro('${l.id}')">
       <td data-label="Data" style="color:var(--muted);">${fmtDataCurta(l.data)}</td>
-      <td data-label="Descrição">${l.desc}</td>
+      <td data-label="Descrição">${l.desc}<br><span style="font-size:11px;color:var(--muted);">Pago em ${l.forma}</span></td>
       <td data-label="Tipo"><span class="badge ${l.tipo==='entrada'?'badge-green':'badge-red'}">${l.tipo}</span></td>
       <td data-label="Forma" style="color:var(--muted);">${l.forma}</td>
       <td data-label="Valor" style="font-family:var(--font-mono);">${fmtMoeda(l.valor)}</td>
-      <td style="display:flex;gap:6px;">
+      <td style="display:flex;gap:6px;" onclick="event.stopPropagation();">
         <button class="btn btn-ghost" onclick="abrirModalEditarLancamento('${l.tabela}','${l.id}')">Editar</button>
         <button class="btn btn-danger" onclick="excluirLancamento('${l.tabela}','${l.id}')">Excluir</button>
       </td>
     </tr>`).join('') : `<tr><td colspan="6" style="color:var(--muted);text-align:center;">Nenhum lançamento neste mês</td></tr>`;
+
+  window._lancamentosCache = lancamentos;
+}
+
+function abrirDetalheFinanceiro(id) {
+  const l = (window._lancamentosCache || []).find((x) => x.id === id);
+  if (!l || !l.detalhes || !l.detalhes.length) return;
+  abrirModal(`
+    <h2>Detalhes do lançamento</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:6px;">${fmtDataCurta(l.data)}</p>
+    <div style="display:inline-block;padding:4px 12px;background:${l.forma==='Pix'?'rgba(34,197,94,0.15)':l.forma==='Cartão'?'rgba(59,130,246,0.15)':'rgba(234,179,8,0.15)'};color:${l.forma==='Pix'?'#22C55E':l.forma==='Cartão'?'#3B82F6':'#EAB308'};border-radius:var(--radius-sm);font-size:13px;font-weight:600;margin-bottom:14px;">
+      ${l.forma==='Pix'?'◈':l.forma==='Cartão'?'💳':'💵'} Pago em ${l.forma}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      ${l.detalhes.map((d) => `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:14px;">
+        <span>${d.split(' — ')[0]}</span>
+        <span style="font-family:var(--font-mono);color:var(--brass-soft);">${d.split(' — ')[1] || ''}</span>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:10px 12px;border-top:1px solid var(--border);font-weight:600;">
+      <span>Total</span>
+      <span style="font-family:var(--font-mono);color:var(--brass-soft);font-size:18px;">${fmtMoeda(l.valor)}</span>
+    </div>
+    <div class="modal-actions"><button type="button" class="btn" style="width:100%;" onclick="fecharModal()">Fechar</button></div>
+  `);
 }
 
 async function apagarTudoFinanceiro() {
@@ -2163,7 +3780,7 @@ async function excluirLancamento(tabela, id) {
     if (!confirm('Excluir esse lançamento de saída?')) return;
     await sb.from('despesas').delete().eq('id', id);
   } else {
-    if (!confirm('Remover essa entrada do financeiro? O agendamento continua existindo (some só do caixa).')) return;
+    if (!confirm('Remover essa entrada do financeiro? O agendamento e os itens da comanda continuam existindo (some só do caixa).')) return;
     await sb.from('agendamentos').update({ concluido_em: null }).eq('id', id);
   }
   renderFinanceiro();
@@ -2300,8 +3917,29 @@ sb.auth.onAuthStateChange((evento, session) => {
     }
   }
 
-  if (!PERFIL.liberado) { document.getElementById('tela-pausado').style.display = 'flex'; return; }
+  if (!PERFIL.liberado) {
+    const jaTeveAssinatura = !!PERFIL.plano_plataforma_id || !!PERFIL.assinatura_vencimento;
+    const criadoEm = PERFIL.criado_em ? new Date(PERFIL.criado_em) : null;
+    const hoje = new Date(agoraComoDigitosLocais().slice(0, 10) + 'T12:00:00');
+    const diasDesdeRegistro = criadoEm ? Math.floor((hoje - criadoEm) / (1000 * 60 * 60 * 24)) : 999;
+    const diasRestantesTrial = Math.max(0, 7 - diasDesdeRegistro);
+
+    if (!jaTeveAssinatura && diasRestantesTrial > 0) {
+      document.getElementById('sidebar-trial-dias').textContent = diasRestantesTrial === 1
+        ? 'Ultimo dia!'
+        : `${diasRestantesTrial} dias restantes`;
+      document.getElementById('sidebar-trial').style.display = 'block';
+      PLANO_UM_BARBEIRO = true;
+    } else if (!jaTeveAssinatura) {
+      document.getElementById('tela-trial-expirado').style.display = 'flex';
+      return;
+    } else {
+      document.getElementById('tela-pausado').style.display = 'flex';
+      return;
+    }
+  }
   document.getElementById('tela-pausado').style.display = 'none';
+  document.getElementById('tela-trial-expirado').style.display = 'none';
   if (!PERFIL.configurado) mostrarPagina('config');
   else renderPainel();
   iniciarClimaRelogio();

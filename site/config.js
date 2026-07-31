@@ -1,6 +1,7 @@
 const SUPABASE_URL = 'https://zyftjfwgveunyzlhqhgq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5ZnRqZndndmV1bnl6bGhxaGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2Mzk5NzYsImV4cCI6MjEwMDIxNTk3Nn0.Y4mI6vLMAAGBuMmI9gMZaz9s1h2TIUaT3SNcnTDAZDU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sbPublic = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
 
 // URL absoluta do backend (funções de pagamento etc) — usar sempre isso em
 // vez de caminho relativo tipo "/api/...". Quando a página está embutida em

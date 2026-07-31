@@ -18,9 +18,9 @@ declare
   v_qtd int;
   -- tabelas onde "anon" NÃO deveria ter INSERT/UPDATE/DELETE em nenhuma coluna
   v_tabelas_proibidas text[] := array[
-    'agendamento_servicos','assinaturas','clientes','cobrancas','despesas',
-    'horarios_ocupados','lojas','pedido_itens','pedidos','pedidos_plataforma',
-    'planos','produtos','servicos'
+    'agendamento_servicos','assinaturas','bloqueios','clientes','cobrancas',
+    'comanda_itens','despesas','horarios_ocupados','lojas','pedido_itens',
+    'pedidos','pedidos_plataforma','planos','produtos','servicos'
   ];
 begin
   foreach v_tabela in array v_tabelas_proibidas loop

@@ -173,16 +173,28 @@ export default async function handler(req, res) {
     // pro cliente voltar pro link certo da barbearia depois de pagar (ou
     // desistir) no Mercado Pago — sem isso ele cai numa página sem saber
     // qual barbearia é, e dá "Barbearia não encontrada".
-    const perfil = await buscarUm(`perfis?id=eq.${ownerId}&select=slug`);
+    const perfil = await buscarUm(`perfis?id=eq.${ownerId}&select=slug,taxas_pagamento`);
     const linkVoltarBase = perfil && perfil.slug
       ? `https://smartlinkdigital.com.br/${perfil.slug}`
       : `${APP_URL}/agendar.html`;
 
-    const metodo = ['pix', 'dinheiro'].includes(corpo.metodo) ? corpo.metodo : 'cartao';
+    const metodoOriginal = ['pix', 'dinheiro', 'debito'].includes(corpo.metodo) ? corpo.metodo : 'cartao';
+    const metodo = metodoOriginal === 'debito' ? 'cartao' : metodoOriginal;
 
     if (metodo !== 'dinheiro' && (!barbeiro.mp_conectado || !barbeiro.mp_access_token)) {
       return res.status(400).json({ erro: 'Esse barbeiro ainda não conectou a conta Mercado Pago.' });
     }
+
+    const taxas = perfil && perfil.taxas_pagamento ? perfil.taxas_pagamento : {};
+    const metodoTaxa = metodoOriginal === 'debito' ? 'debito' : (metodo === 'cartao' ? 'credito' : metodo);
+    const taxaPct = Number(taxas[metodoTaxa] || 0);
+    const valorOriginal = valor;
+    const valorTaxa = taxaPct > 0 ? Math.round(valor * taxaPct) / 100 : 0;
+    valor = Math.round((valor + valorTaxa) * 100) / 100;
+
+    const descricaoFinal = taxaPct > 0
+      ? `${descricao} (taxa ${metodoTaxa} ${taxaPct}%: +${valorTaxa.toFixed(2)})`
+      : descricao;
 
     // cria a cobrança no nosso banco primeiro pra ter um id de referência
     const criacao = await fetch(`${SUPABASE_URL}/rest/v1/cobrancas`, {
@@ -195,7 +207,7 @@ export default async function handler(req, res) {
         agendamento_id: agendamentoId || null,
         plano_id: planoId || null,
         pedido_id: pedidoId || null,
-        descricao,
+        descricao: descricaoFinal,
         valor,
         metodo
       })
