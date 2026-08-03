@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'http://supabasekong-s1w28od151lwwb852jbfh4jsk:3000';
-const SUPABASE_ANON_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5ZnRqZndndmV1bnl6bGhxYWdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MTc5MjAsImV4cCI6NDkwMTE5MTUyMH0.Y4mI6vLMAAGBuMmI9gMZaz9s1h2TIUaT3SNcnTDAZDU';
+const SUPABASE_ANON_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5ZnRqZndndmV1bnl6bGhxYWdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MTc5MjAsImV4cCI6NDkwMTE5MTUyMH0.e_HxdxeX9Aaxnf4-2kpYMSeNfyk5uJro-1yE9bu4EGk';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const sbPublic = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
 
