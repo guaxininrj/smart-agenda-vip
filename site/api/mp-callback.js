@@ -49,6 +49,7 @@ export default async function handler(req, res) {
     });
     const dados = await tokenResp.json();
     if (!tokenResp.ok || !dados.access_token) {
+      console.error('[mp-callback] token exchange falhou', tokenResp.status, JSON.stringify(dados));
       res.status(200).setHeader('Content-Type', 'text/html');
       return res.send(paginaErro('O Mercado Pago recusou a autorização. Tente novamente.'));
     }
