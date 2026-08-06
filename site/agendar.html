@@ -2,10 +2,14 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<script>if (location.hostname !== 'barberbook-smartlink.vercel.app') document.write('<base href="https://barberbook-smartlink.vercel.app/">');</script>
+<script>if (location.hostname !== 'agenda.smartlinkdigital.com.br') document.write('<base href="https://agenda.smartlinkdigital.com.br/">');</script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Agendar — Smart Agenda VIP (Produtos apenas visualização)</title>
+<link rel="icon" type="image/png" href="/logo.png" />
+<meta name="theme-color" content="#060607" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -246,6 +250,54 @@ function fmtMoeda(v) {
   return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Manifest do PWA é gerado na hora (via Blob) em vez de um arquivo fixo,
+// porque cada barbearia tem sua própria URL (/slug-da-barbearia) — assim,
+// quando o cliente instala a página na tela do celular, o app instalado
+// já abre direto na barbearia certa, com o nome e a foto dela.
+function configurarManifestCliente() {
+  const nome = LOJA.nome_barbearia || 'Smart Agenda VIP';
+  const icone = LOJA.logo_url || '/logo.png';
+  const manifest = {
+    name: `${nome} — Agendamento`,
+    short_name: nome.length > 15 ? nome.slice(0, 15) : nome,
+    start_url: location.pathname,
+    scope: location.pathname,
+    display: 'standalone',
+    orientation: 'portrait-primary',
+    background_color: '#060607',
+    theme_color: '#060607',
+    lang: 'pt-BR',
+    icons: [
+      { src: icone, sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: icone, sizes: '512x512', type: 'image/png', purpose: 'any' }
+    ]
+  };
+  const blobUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/json' }));
+  let link = document.querySelector('link[rel="manifest"]');
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'manifest';
+    document.head.appendChild(link);
+  }
+  link.href = blobUrl;
+
+  let appleTitulo = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+  if (!appleTitulo) {
+    appleTitulo = document.createElement('meta');
+    appleTitulo.name = 'apple-mobile-web-app-title';
+    document.head.appendChild(appleTitulo);
+  }
+  appleTitulo.content = nome;
+
+  let appleIcone = document.querySelector('link[rel="apple-touch-icon"]');
+  if (!appleIcone) {
+    appleIcone = document.createElement('link');
+    appleIcone.rel = 'apple-touch-icon';
+    document.head.appendChild(appleIcone);
+  }
+  appleIcone.href = icone;
+}
+
 async function iniciar() {
   const slug = obterSlug();
   if (!slug) {
@@ -265,6 +317,7 @@ async function iniciar() {
     if (perfilTaxas && perfilTaxas.taxas_pagamento) LOJA.taxas_pagamento = perfilTaxas.taxas_pagamento;
   } catch (e) {}
   document.title = `Agendar — ${LOJA.nome_barbearia}`;
+  configurarManifestCliente();
   document.getElementById('topo-nome').textContent = LOJA.nome_barbearia;
   document.getElementById('loja-nome').textContent = LOJA.nome_barbearia;
   document.getElementById('loja-sobre').textContent = LOJA.sobre || '';
@@ -1248,6 +1301,10 @@ function iniciarTempoRealPublico() {
 }
 
 iniciar();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
 </script>
 
 </body>
