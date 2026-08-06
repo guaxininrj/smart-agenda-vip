@@ -1,4 +1,4 @@
-const SUPABASE_URL = 'http://supabasekong-s1w28od151lwwb852jbfh4jsk:3000';
+const SUPABASE_URL = 'https://supabase.smartlinkdigital.com.br';
 const SUPABASE_ANON_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5ZnRqZndndmV1bnl6bGhxYWdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MTc5MjAsImV4cCI6NDkwMTE5MTUyMH0.e_HxdxeX9Aaxnf4-2kpYMSeNfyk5uJro-1yE9bu4EGk';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const sbPublic = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
@@ -8,12 +8,9 @@ const sbPublic = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: 
 // smartlinkdigital.com.br, um caminho relativo pode disparar o redirect
 // apex->www do domínio, que o navegador trata como troca de origem e
 // bloqueia o fetch por CORS no meio do caminho.
-// IMPORTANTE: barberbook-smartlink.vercel.app é um alias MANUAL (vercel
-// alias set), não um domínio de verdade do projeto — por isso NÃO acompanha
-// deploys novos sozinho. Depois de todo "vercel --prod" nesse projeto, rodar
-// de novo: vercel alias set <url-do-deploy-novo> barberbook-smartlink.vercel.app
-// (senão OAuth do Mercado Pago, webhook e essa URL ficam presos numa versão velha).
-const MP_API_URL = 'https://barberbook-smartlink.vercel.app';
+// Self-hosted: server.js já expõe as rotas /api/* nesse mesmo container
+// (Express, ver server.js), então o backend é o próprio domínio do app.
+const MP_API_URL = 'https://agenda.smartlinkdigital.com.br';
 
 // Navega preservando o prefixo /smart-agenda quando o app está embutido
 // no site da Smart Link (evita quebrar com o cleanUrls colapsando index.html
