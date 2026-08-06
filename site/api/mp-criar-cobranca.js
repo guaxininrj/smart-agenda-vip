@@ -1,4 +1,5 @@
-// Cria uma cobrança na conta Mercado Pago do barbeiro. Duas formas de chamar:
+// Registra a intenção de pagamento de um agendamento, plano ou pedido de
+// produtos. Duas formas de chamar:
 //
 // 1) Dono do painel gera cobrança avulsa: { barbeiro_id, cliente_id, valor, descricao }
 //    com header Authorization: Bearer <token supabase do dono>.
@@ -6,19 +7,12 @@
 //    sem autenticação — confia no agendamento_id existir (mesmo padrão já usado
 //    no resto do sistema para o fluxo público de agendamento).
 //
-// Em ambos os casos aceita { metodo: 'pix' | 'cartao' | 'dinheiro' } (padrão 'cartao'):
-// - 'pix' usa a API de Orders do Mercado Pago e devolve o QR code (imagem +
-//   código copia-e-cola) pra mostrar direto na tela, sem redirecionar.
-// - 'cartao' usa o Checkout Pro (preferences) e devolve um link de pagamento
-//   hospedado pelo Mercado Pago, com crédito/débito/boleto.
-// - 'dinheiro' não fala com o Mercado Pago (não tem como automatizar dinheiro
-//   vivo) — só registra a intenção de pagamento pra aparecer no painel do
-//   barbeiro. Por isso é o único método que funciona mesmo se o barbeiro
-//   ainda não tiver conectado o Mercado Pago.
+// Aceita { metodo: 'pix' | 'dinheiro' } (padrão 'pix'). Nenhum dos dois fala
+// com um gateway de pagamento — o barbeiro recebe direto (Pix na hora, sem
+// taxa) e só marca como pago no painel depois de confirmar o recebimento.
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const APP_URL = process.env.APP_URL || 'https://barberbook-smartlink.vercel.app';
 
 const HEADERS_SERVICO = {
   apikey: SERVICE_ROLE_KEY,
@@ -62,7 +56,7 @@ export default async function handler(req, res) {
 
   try {
     const corpo = req.body || {};
-    let barbeiro, valor, descricao, clienteId, agendamentoId, ownerId, planoId, pedidoId, pedidoItensCriados;
+    let barbeiro, valor, descricao, clienteId, agendamentoId, ownerId, planoId, pedidoId;
 
     if (Array.isArray(corpo.itens) && corpo.itens.length && corpo.cliente_id) {
       const idsProdutos = corpo.itens.map((i) => i.produto_id).filter(Boolean);
@@ -91,13 +85,10 @@ export default async function handler(req, res) {
       }
       if (!itensParaCriar.length) return res.status(400).json({ erro: 'Carrinho vazio.' });
 
-      // a venda vai direto pro Mercado Pago do barbeiro dono dessa loja, não
-      // de um barbeiro qualquer da barbearia — cada um vende os seus produtos.
-      barbeiro = await buscarUm(`barbeiros?id=eq.${barbeiroDaLoja}&select=id,nome,mp_conectado,mp_access_token`);
+      // a venda vai pro barbeiro dono dessa loja, não de um barbeiro qualquer
+      // da barbearia — cada um vende os seus produtos.
+      barbeiro = await buscarUm(`barbeiros?id=eq.${barbeiroDaLoja}&select=id,nome`);
       if (!barbeiro) return res.status(404).json({ erro: 'Barbeiro dessa loja não encontrado.' });
-      if (corpo.metodo !== 'dinheiro' && !barbeiro.mp_conectado) {
-        return res.status(400).json({ erro: `${barbeiro.nome} ainda não conectou a conta Mercado Pago.` });
-      }
 
       const criacaoPedido = await fetch(`${SUPABASE_URL}/rest/v1/pedidos`, {
         method: 'POST',
@@ -118,15 +109,12 @@ export default async function handler(req, res) {
       clienteId = corpo.cliente_id;
       ownerId = donoDosProdutos;
       pedidoId = pedido.id;
-      pedidoItensCriados = itensParaCriar;
     } else if (corpo.plano_id && corpo.cliente_id) {
       const plano = await buscarUm(`planos?id=eq.${corpo.plano_id}&select=id,owner_id,nome,preco,ativo`);
       if (!plano || !plano.ativo) return res.status(404).json({ erro: 'Plano não encontrado.' });
 
-      barbeiro = await buscarUm(
-        `barbeiros?owner_id=eq.${plano.owner_id}&mp_conectado=eq.true&select=id,nome,mp_conectado,mp_access_token&limit=1`
-      );
-      if (!barbeiro) return res.status(400).json({ erro: 'Nenhum barbeiro dessa barbearia conectou o Mercado Pago ainda.' });
+      barbeiro = await buscarUm(`barbeiros?owner_id=eq.${plano.owner_id}&select=id,nome&limit=1`);
+      if (!barbeiro) return res.status(400).json({ erro: 'Essa barbearia ainda não tem nenhum barbeiro cadastrado.' });
 
       valor = Number(plano.preco || 0);
       descricao = `Plano ${plano.nome}`;
@@ -142,9 +130,7 @@ export default async function handler(req, res) {
       if (agendamento.status === 'cancelado') return res.status(400).json({ erro: 'Esse agendamento foi cancelado.' });
       if (!agendamento.barbeiro_id) return res.status(400).json({ erro: 'Esse agendamento não tem um barbeiro definido.' });
 
-      barbeiro = await buscarUm(
-        `barbeiros?id=eq.${agendamento.barbeiro_id}&select=id,nome,mp_conectado,mp_access_token`
-      );
+      barbeiro = await buscarUm(`barbeiros?id=eq.${agendamento.barbeiro_id}&select=id,nome`);
       valor = Number(agendamento.valor || 0);
       descricao = 'Serviço agendado';
       clienteId = agendamento.cliente_id;
@@ -153,9 +139,7 @@ export default async function handler(req, res) {
       const donoId = await confirmarDono(req.headers.authorization);
       if (!donoId) return res.status(401).json({ erro: 'Não autenticado.' });
 
-      barbeiro = await buscarUm(
-        `barbeiros?id=eq.${corpo.barbeiro_id}&owner_id=eq.${donoId}&select=id,nome,mp_conectado,mp_access_token`
-      );
+      barbeiro = await buscarUm(`barbeiros?id=eq.${corpo.barbeiro_id}&owner_id=eq.${donoId}&select=id,nome`);
       if (!barbeiro) return res.status(404).json({ erro: 'Barbeiro não encontrado.' });
       valor = Number(corpo.valor || 0);
       descricao = corpo.descricao || 'Cobrança avulsa';
@@ -170,36 +154,25 @@ export default async function handler(req, res) {
       return res.status(400).json({ erro: 'Valor inválido para gerar cobrança.' });
     }
 
-    // pro cliente voltar pro link certo da barbearia depois de pagar (ou
-    // desistir) no Mercado Pago — sem isso ele cai numa página sem saber
-    // qual barbearia é, e dá "Barbearia não encontrada".
-    const perfil = await buscarUm(`perfis?id=eq.${ownerId}&select=slug,taxas_pagamento`);
-    const linkVoltarBase = perfil && perfil.slug
-      ? `https://smartlinkdigital.com.br/${perfil.slug}`
-      : `${APP_URL}/agendar.html`;
-
-    const metodoOriginal = ['pix', 'dinheiro', 'debito'].includes(corpo.metodo) ? corpo.metodo : 'cartao';
-    const metodo = metodoOriginal === 'debito' ? 'cartao' : metodoOriginal;
-
-    if (metodo !== 'dinheiro' && (!barbeiro.mp_conectado || !barbeiro.mp_access_token)) {
-      return res.status(400).json({ erro: 'Esse barbeiro ainda não conectou a conta Mercado Pago.' });
-    }
+    const perfil = await buscarUm(`perfis?id=eq.${ownerId}&select=taxas_pagamento`);
+    const metodo = corpo.metodo === 'dinheiro' ? 'dinheiro' : 'pix';
 
     const taxas = perfil && perfil.taxas_pagamento ? perfil.taxas_pagamento : {};
-    const metodoTaxa = metodoOriginal === 'debito' ? 'debito' : (metodo === 'cartao' ? 'credito' : metodo);
-    const taxaPct = Number(taxas[metodoTaxa] || 0);
-    const valorOriginal = valor;
+    const taxaPct = Number(taxas[metodo] || 0);
     const valorTaxa = taxaPct > 0 ? Math.round(valor * taxaPct) / 100 : 0;
     valor = Math.round((valor + valorTaxa) * 100) / 100;
 
     const descricaoFinal = taxaPct > 0
-      ? `${descricao} (taxa ${metodoTaxa} ${taxaPct}%: +${valorTaxa.toFixed(2)})`
+      ? `${descricao} (taxa ${metodo} ${taxaPct}%: +${valorTaxa.toFixed(2)})`
       : descricao;
 
-    // cria a cobrança no nosso banco primeiro pra ter um id de referência
-    const criacao = await fetch(`${SUPABASE_URL}/rest/v1/cobrancas`, {
+    // fica pendente até o dono marcar como pago manualmente no painel — só
+    // aí o estoque é baixado, pra não descontar produto que não foi de fato
+    // pago. Tanto pix quanto dinheiro são recebidos direto pelo barbeiro,
+    // sem passar por gateway nenhum.
+    await fetch(`${SUPABASE_URL}/rest/v1/cobrancas`, {
       method: 'POST',
-      headers: { ...HEADERS_SERVICO, Prefer: 'return=representation' },
+      headers: { ...HEADERS_SERVICO, Prefer: 'return=minimal' },
       body: JSON.stringify({
         owner_id: ownerId,
         barbeiro_id: barbeiro.id,
@@ -212,88 +185,8 @@ export default async function handler(req, res) {
         metodo
       })
     });
-    const [cobranca] = await criacao.json();
-    if (!cobranca) return res.status(500).json({ erro: 'Não consegui criar o registro da cobrança.' });
 
-    if (metodo === 'dinheiro') {
-      // dinheiro fica pendente até o dono marcar como pago manualmente no
-      // painel (mesmo padrão do "dinheiro" no fluxo de agendamento) — só aí
-      // o estoque é baixado, pra não descontar produto que não foi de fato pago.
-      return res.status(200).json({ metodo: 'dinheiro' });
-    }
-
-    if (metodo === 'pix') {
-      const emailPagador = `cliente-${cobranca.id}@pagamentos-smartagenda.com`;
-      const orderResp = await fetch('https://api.mercadopago.com/v1/orders', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${barbeiro.mp_access_token}`,
-          'Content-Type': 'application/json',
-          'X-Idempotency-Key': cobranca.id
-        },
-        body: JSON.stringify({
-          type: 'online',
-          total_amount: valor.toFixed(2),
-          external_reference: cobranca.id,
-          processing_mode: 'automatic',
-          transactions: {
-            payments: [{ amount: valor.toFixed(2), payment_method: { id: 'pix', type: 'bank_transfer' } }]
-          },
-          payer: { email: emailPagador },
-          description: descricao
-        })
-      });
-      const order = await orderResp.json();
-      const pagamento = order.transactions && order.transactions.payments && order.transactions.payments[0];
-      const qrCode = pagamento && pagamento.payment_method ? pagamento.payment_method.qr_code : null;
-      const qrCodeBase64 = pagamento && pagamento.payment_method ? pagamento.payment_method.qr_code_base64 : null;
-      if (!orderResp.ok || !qrCode) {
-        return res.status(502).json({ erro: 'O Mercado Pago recusou a criação do Pix.' });
-      }
-
-      await fetch(`${SUPABASE_URL}/rest/v1/cobrancas?id=eq.${cobranca.id}`, {
-        method: 'PATCH',
-        headers: { ...HEADERS_SERVICO, Prefer: 'return=minimal' },
-        body: JSON.stringify({
-          metodo: 'pix',
-          mp_preference_id: order.id,
-          mp_qr_code: qrCode,
-          mp_qr_code_base64: qrCodeBase64
-        })
-      });
-
-      return res.status(200).json({ metodo: 'pix', qr_code: qrCode, qr_code_base64: qrCodeBase64, cobranca_id: cobranca.id });
-    }
-
-    const prefResp = await fetch('https://api.mercadopago.com/checkout/preferences', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${barbeiro.mp_access_token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        items: [{ title: descricao, quantity: 1, unit_price: valor, currency_id: 'BRL' }],
-        external_reference: cobranca.id,
-        notification_url: `${APP_URL}/api/mp-webhook`,
-        back_urls: {
-          success: `${linkVoltarBase}?pago=1`,
-          pending: `${linkVoltarBase}?pago=pendente`,
-          failure: `${linkVoltarBase}?pago=falhou`
-        }
-      })
-    });
-    const preferencia = await prefResp.json();
-    if (!prefResp.ok || !preferencia.init_point) {
-      return res.status(502).json({ erro: 'O Mercado Pago recusou a criação da cobrança.' });
-    }
-
-    await fetch(`${SUPABASE_URL}/rest/v1/cobrancas?id=eq.${cobranca.id}`, {
-      method: 'PATCH',
-      headers: { ...HEADERS_SERVICO, Prefer: 'return=minimal' },
-      body: JSON.stringify({ metodo: 'cartao', mp_preference_id: preferencia.id, link_pagamento: preferencia.init_point })
-    });
-
-    return res.status(200).json({ metodo: 'cartao', link_pagamento: preferencia.init_point });
+    return res.status(200).json({ metodo });
   } catch (e) {
     return res.status(500).json({ erro: 'Erro inesperado ao gerar a cobrança.' });
   }

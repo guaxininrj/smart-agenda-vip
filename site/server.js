@@ -11,11 +11,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const apiRoutes = [
-  'mp-callback',
-  'mp-webhook',
   'mp-criar-cobranca',
-  'mp-verificar-pagamento',
-  'mp-verificar-pendentes',
   'plano-cliente',
   'infinitepay-checkout',
   'expirar-assinaturas',

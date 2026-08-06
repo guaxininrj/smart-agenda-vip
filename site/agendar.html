@@ -232,7 +232,6 @@ let PRODUTOS = [];
 let CARRINHO = {};
 let TELA_ATUAL = null;
 let RESERVA = { barbeiro: null, servicos: [], data: null, hora: null };
-let INTERVALO_STATUS_PAGAMENTO = null;
 let CLIENTE_LOGADO = null;
 
 function obterSlug() {
@@ -297,7 +296,7 @@ async function iniciar() {
 
   const [{ data: servicos }, { data: barbeiros }, { data: produtos }, { data: planos }] = await Promise.all([
     sbPublic.from('servicos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
-    sbPublic.from('barbeiros').select('id,nome,foto_url,comissao_pct,mp_conectado').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
+    sbPublic.from('barbeiros').select('id,nome,foto_url,comissao_pct').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
     sbPublic.from('produtos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome'),
     sbPublic.from('planos').select('*').eq('owner_id', LOJA.id).eq('ativo', true).order('nome')
   ]);
@@ -356,19 +355,11 @@ function fecharModal() {
   TELA_ATUAL = null;
   document.getElementById('modal-overlay').classList.remove('aberto');
   document.getElementById('modal-box').innerHTML = '';
-  if (INTERVALO_STATUS_PAGAMENTO) {
-    clearInterval(INTERVALO_STATUS_PAGAMENTO);
-    INTERVALO_STATUS_PAGAMENTO = null;
-  }
 }
 
-// Quando o cliente clica em Cartão, a página redireciona pro checkout do
-// Mercado Pago com os botões de forma de pagamento já desabilitados (pra
-// evitar clique duplo antes de sair). Se ele volta pelo botão "voltar" do
-// navegador, o celular às vezes restaura a página congelada exatamente como
-// ficou (bfcache) — inclusive com os botões ainda desabilitados — em vez de
-// carregar tudo de novo. Isso deixava sem jeito de trocar a forma de
-// pagamento. Esse listener detecta essa restauração e reabilita os botões.
+// Se o navegador restaura a página do cache (bfcache) com os botões de
+// pagamento ainda desabilitados de uma tentativa anterior, esse listener
+// reabilita eles pra não deixar sem jeito de escolher a forma de pagamento.
 window.addEventListener('pageshow', (e) => {
   if (e.persisted) {
     document.querySelectorAll('#area-pagamento button:disabled, #area-pagamento-plano button:disabled, #area-pagamento-carrinho button:disabled').forEach((b) => { b.disabled = false; });
@@ -807,13 +798,7 @@ async function confirmarReserva() {
   `);
 }
 
-function taxaLabel(metodo) {
-  const taxas = LOJA.taxas_pagamento || {};
-  const pct = Number(taxas[metodo] || 0);
-  return pct > 0 ? `<span style="font-size:10px;color:var(--muted);display:block;">+${pct}% taxa</span>` : '';
-}
-
-function formasPagamentoHtml(agendamentoId, mpConectado) {
+function formasPagamentoHtml(agendamentoId) {
   return `
     <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Formas de Pagamento</p>
     <div class="formas-pagamento">
@@ -823,64 +808,23 @@ function formasPagamentoHtml(agendamentoId, mpConectado) {
           <span>Plano</span>
         </button>
       ` : ''}
-      ${mpConectado ? `
-        <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'cartao', this)">
-          <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span>
-          <span>Crédito${taxaLabel('credito')}</span>
-        </button>
-        <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'debito', this)">
-          <span class="forma-icone" style="background:rgba(168,85,247,0.15);color:#A855F7;">💳</span>
-          <span>Débito${taxaLabel('debito')}</span>
-        </button>
-      ` : ''}
-      <button type="button" class="forma-pagamento" onclick="escolherPagamentoDinheiro('${agendamentoId}', this)">
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoManual('${agendamentoId}', 'pix', this)">
+        <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
+        <span>Pix</span>
+      </button>
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoManual('${agendamentoId}', 'dinheiro', this)">
         <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span>
         <span>Dinheiro</span>
       </button>
-      ${mpConectado ? `
-        <button type="button" class="forma-pagamento" onclick="escolherPagamento('${agendamentoId}', 'pix', this)">
-          <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
-          <span>Pix${taxaLabel('pix')}</span>
-        </button>
-      ` : ''}
     </div>
   `;
 }
 
 function voltarFormasPagamento(agendamentoId) {
-  if (INTERVALO_STATUS_PAGAMENTO) {
-    clearInterval(INTERVALO_STATUS_PAGAMENTO);
-    INTERVALO_STATUS_PAGAMENTO = null;
-  }
-  document.getElementById('area-pagamento').innerHTML = formasPagamentoHtml(agendamentoId, RESERVA.barbeiro.mp_conectado);
+  document.getElementById('area-pagamento').innerHTML = formasPagamentoHtml(agendamentoId);
 }
 
-async function escolherPagamentoDinheiro(agendamentoId, botao) {
-  const area = document.getElementById('area-pagamento');
-  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
-  try {
-    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agendamento_id: agendamentoId, metodo: 'dinheiro' })
-    });
-    const dados = await resp.json();
-    if (!resp.ok) {
-      alert(dados.erro || 'Não foi possível registrar.');
-      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
-      return;
-    }
-    area.innerHTML = `
-      <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:10px;">✅ Combinado! Pague direto na barbearia.</p>
-      <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamento('${agendamentoId}')">← Trocar forma de pagamento</button>
-    `;
-  } catch (e) {
-    alert('Erro ao registrar. Tente novamente.');
-    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
-  }
-}
-
-async function escolherPagamento(agendamentoId, metodo, botao) {
+async function escolherPagamentoManual(agendamentoId, metodo, botao) {
   const area = document.getElementById('area-pagamento');
   area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
   try {
@@ -891,63 +835,19 @@ async function escolherPagamento(agendamentoId, metodo, botao) {
     });
     const dados = await resp.json();
     if (!resp.ok) {
-      alert(dados.erro || 'Não foi possível gerar o pagamento.');
+      alert(dados.erro || 'Não foi possível registrar.');
       area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
       return;
     }
-
-    if (metodo === 'cartao' || metodo === 'debito') {
-      location.href = dados.link_pagamento;
-      return;
-    }
-
+    const mensagem = metodo === 'pix' ? 'Combinado! Pague o Pix direto com o profissional.' : 'Combinado! Pague direto na barbearia.';
     area.innerHTML = `
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Escaneie o QR code com o app do seu banco ou copie o código:</p>
-      <div style="background:#fff;border-radius:var(--radius-sm);padding:14px;display:flex;justify-content:center;margin-bottom:12px;">
-        <img src="data:image/png;base64,${dados.qr_code_base64}" alt="QR code Pix" style="width:200px;height:200px;" />
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input type="text" readonly value="${dados.qr_code}" style="font-size:11px;" onclick="this.select()" />
-        <button type="button" class="btn" style="flex-shrink:0;" onclick="copiarCodigoPix(this, '${dados.qr_code}')">Copiar</button>
-      </div>
-      <p id="status-pagamento-pix" style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px;">⏳ Aguardando pagamento...</p>
+      <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:10px;">✅ ${mensagem}</p>
       <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamento('${agendamentoId}')">← Trocar forma de pagamento</button>
     `;
-
-    if (INTERVALO_STATUS_PAGAMENTO) clearInterval(INTERVALO_STATUS_PAGAMENTO);
-    INTERVALO_STATUS_PAGAMENTO = setInterval(() => verificarStatusPagamento(agendamentoId), 4000);
   } catch (e) {
-    alert('Erro ao gerar o pagamento. Tente novamente.');
+    alert('Erro ao registrar. Tente novamente.');
     area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
   }
-}
-
-function copiarCodigoPix(botao, codigo) {
-  navigator.clipboard.writeText(codigo).then(() => {
-    const textoOriginal = botao.textContent;
-    botao.textContent = 'Copiado!';
-    setTimeout(() => { botao.textContent = textoOriginal; }, 2000);
-  });
-}
-
-async function verificarStatusPagamento(agendamentoId) {
-  // Confere direto na API do Mercado Pago (não só o aviso automático) —
-  // o Pix usa uma notificação diferente da configurada no painel, então
-  // essa checagem ativa garante que o pagamento seja detectado mesmo se
-  // o aviso automático não chegar.
-  try {
-    const resp = await fetch(`${MP_API_URL}/api/mp-verificar-pagamento`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agendamento_id: agendamentoId })
-    });
-    const dados = await resp.json();
-    if (dados.status === 'pago') {
-      clearInterval(INTERVALO_STATUS_PAGAMENTO);
-      const statusEl = document.getElementById('status-pagamento-pix');
-      if (statusEl) statusEl.innerHTML = '✅ <strong style="color:#7FE0A7;">Pagamento confirmado!</strong>';
-    }
-  } catch (e) {}
 }
 
 function abrirModalPlano(planoId) {
@@ -992,53 +892,23 @@ function formasPagamentoPlanoHtml(planoId, clienteId) {
   return `
     <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Formas de Pagamento</p>
     <div class="formas-pagamento">
-      <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlano('${planoId}', '${clienteId}', 'cartao', this)">
-        <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span>
-        <span>Cartão</span>
-      </button>
-      <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlanoDinheiro('${planoId}', '${clienteId}', this)">
-        <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span>
-        <span>Dinheiro</span>
-      </button>
-      <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlano('${planoId}', '${clienteId}', 'pix', this)">
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlanoManual('${planoId}', '${clienteId}', 'pix', this)">
         <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
         <span>Pix</span>
+      </button>
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoPlanoManual('${planoId}', '${clienteId}', 'dinheiro', this)">
+        <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span>
+        <span>Dinheiro</span>
       </button>
     </div>
   `;
 }
 
 function voltarFormasPagamentoPlano(planoId, clienteId) {
-  if (INTERVALO_STATUS_PAGAMENTO) { clearInterval(INTERVALO_STATUS_PAGAMENTO); INTERVALO_STATUS_PAGAMENTO = null; }
   document.getElementById('area-pagamento-plano').innerHTML = formasPagamentoPlanoHtml(planoId, clienteId);
 }
 
-async function escolherPagamentoPlanoDinheiro(planoId, clienteId, botao) {
-  const area = document.getElementById('area-pagamento-plano');
-  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
-  try {
-    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plano_id: planoId, cliente_id: clienteId, metodo: 'dinheiro' })
-    });
-    const dados = await resp.json();
-    if (!resp.ok) {
-      alert(dados.erro || 'Não foi possível registrar.');
-      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
-      return;
-    }
-    area.innerHTML = `
-      <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:10px;">✅ Combinado! Pague direto na barbearia.</p>
-      <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamentoPlano('${planoId}', '${clienteId}')">← Trocar forma de pagamento</button>
-    `;
-  } catch (e) {
-    alert('Erro ao registrar. Tente novamente.');
-    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
-  }
-}
-
-async function escolherPagamentoPlano(planoId, clienteId, metodo, botao) {
+async function escolherPagamentoPlanoManual(planoId, clienteId, metodo, botao) {
   const area = document.getElementById('area-pagamento-plano');
   area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
   try {
@@ -1049,57 +919,19 @@ async function escolherPagamentoPlano(planoId, clienteId, metodo, botao) {
     });
     const dados = await resp.json();
     if (!resp.ok) {
-      alert(dados.erro || 'Não foi possível gerar o pagamento.');
+      alert(dados.erro || 'Não foi possível registrar.');
       area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
       return;
     }
-
-    if (metodo === 'cartao' || metodo === 'debito') {
-      location.href = dados.link_pagamento;
-      return;
-    }
-
+    const mensagem = metodo === 'pix' ? 'Combinado! Pague o Pix direto com o profissional.' : 'Combinado! Pague direto na barbearia.';
     area.innerHTML = `
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Escaneie o QR code com o app do seu banco ou copie o código:</p>
-      <div style="background:#fff;border-radius:var(--radius-sm);padding:14px;display:flex;justify-content:center;margin-bottom:12px;">
-        <img src="data:image/png;base64,${dados.qr_code_base64}" alt="QR code Pix" style="width:200px;height:200px;" />
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input type="text" readonly value="${dados.qr_code}" style="font-size:11px;" onclick="this.select()" />
-        <button type="button" class="btn" style="flex-shrink:0;" onclick="copiarCodigoPix(this, '${dados.qr_code}')">Copiar</button>
-      </div>
-      <p id="status-pagamento-plano-pix" style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px;">⏳ Aguardando pagamento...</p>
+      <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:10px;">✅ ${mensagem} Assim que o profissional confirmar o recebimento no painel, o plano é ativado.</p>
       <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamentoPlano('${planoId}', '${clienteId}')">← Trocar forma de pagamento</button>
     `;
-
-    if (INTERVALO_STATUS_PAGAMENTO) clearInterval(INTERVALO_STATUS_PAGAMENTO);
-    INTERVALO_STATUS_PAGAMENTO = setInterval(() => verificarStatusPagamentoPlano(dados.cobranca_id), 4000);
   } catch (e) {
-    alert('Erro ao gerar o pagamento. Tente novamente.');
+    alert('Erro ao registrar. Tente novamente.');
     area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
   }
-}
-
-async function verificarStatusPagamentoPlano(cobrancaId) {
-  try {
-    const resp = await fetch(`${MP_API_URL}/api/mp-verificar-pagamento`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cobranca_id: cobrancaId })
-    });
-    const dados = await resp.json();
-    if (dados.status === 'pago') {
-      clearInterval(INTERVALO_STATUS_PAGAMENTO);
-      INTERVALO_STATUS_PAGAMENTO = null;
-      const area = document.getElementById('area-pagamento-plano');
-      if (area) {
-        area.innerHTML = `
-          <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:14px;">✅ <strong>Plano ativado!</strong> Já pode usar no seu próximo agendamento.</p>
-          <button type="button" class="btn btn-primary" style="width:100%;" onclick="fecharModal()">Fechar</button>
-        `;
-      }
-    }
-  } catch (e) {}
 }
 
 async function usarPlanoNoAgendamento(agendamentoId, clienteId) {
@@ -1352,54 +1184,23 @@ function formasPagamentoCarrinhoHtml(clienteId) {
   return `
     <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Formas de Pagamento</p>
     <div class="formas-pagamento">
-      <button type="button" class="forma-pagamento" onclick="escolherPagamentoCarrinho('${clienteId}', 'cartao', this)">
-        <span class="forma-icone" style="background:rgba(59,130,246,0.15);color:#3B82F6;">💳</span>
-        <span>Cartão</span>
-      </button>
-      <button type="button" class="forma-pagamento" onclick="escolherPagamentoCarrinhoDinheiro('${clienteId}', this)">
-        <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span>
-        <span>Dinheiro</span>
-      </button>
-      <button type="button" class="forma-pagamento" onclick="escolherPagamentoCarrinho('${clienteId}', 'pix', this)">
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoCarrinhoManual('${clienteId}', 'pix', this)">
         <span class="forma-icone" style="background:rgba(34,197,94,0.15);color:#22C55E;">◈</span>
         <span>Pix</span>
+      </button>
+      <button type="button" class="forma-pagamento" onclick="escolherPagamentoCarrinhoManual('${clienteId}', 'dinheiro', this)">
+        <span class="forma-icone" style="background:rgba(234,179,8,0.15);color:#EAB308;">💵</span>
+        <span>Dinheiro</span>
       </button>
     </div>
   `;
 }
 
 function voltarFormasPagamentoCarrinho(clienteId) {
-  if (INTERVALO_STATUS_PAGAMENTO) { clearInterval(INTERVALO_STATUS_PAGAMENTO); INTERVALO_STATUS_PAGAMENTO = null; }
   document.getElementById('area-pagamento-carrinho').innerHTML = formasPagamentoCarrinhoHtml(clienteId);
 }
 
-async function escolherPagamentoCarrinhoDinheiro(clienteId, botao) {
-  const area = document.getElementById('area-pagamento-carrinho');
-  area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
-  try {
-    const resp = await fetch(`${MP_API_URL}/api/mp-criar-cobranca`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itens: itensCarrinhoParaEnvio(), cliente_id: clienteId, metodo: 'dinheiro' })
-    });
-    const dados = await resp.json();
-    if (!resp.ok) {
-      alert(dados.erro || 'Não foi possível registrar.');
-      area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
-      return;
-    }
-    CARRINHO = {};
-    area.innerHTML = `
-      <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:14px;">✅ Combinado! Pague direto na barbearia.</p>
-      <button type="button" class="btn btn-primary" style="width:100%;" onclick="fecharModal()">Fechar</button>
-    `;
-  } catch (e) {
-    alert('Erro ao registrar. Tente novamente.');
-    area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
-  }
-}
-
-async function escolherPagamentoCarrinho(clienteId, metodo, botao) {
+async function escolherPagamentoCarrinhoManual(clienteId, metodo, botao) {
   const area = document.getElementById('area-pagamento-carrinho');
   area.querySelectorAll('button').forEach((b) => { b.disabled = true; });
   try {
@@ -1410,58 +1211,20 @@ async function escolherPagamentoCarrinho(clienteId, metodo, botao) {
     });
     const dados = await resp.json();
     if (!resp.ok) {
-      alert(dados.erro || 'Não foi possível gerar o pagamento.');
+      alert(dados.erro || 'Não foi possível registrar.');
       area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
       return;
     }
-
-    if (metodo === 'cartao' || metodo === 'debito') {
-      location.href = dados.link_pagamento;
-      return;
-    }
-
+    CARRINHO = {};
+    const mensagem = metodo === 'pix' ? 'Combinado! Pague o Pix direto com o profissional.' : 'Combinado! Pague direto na barbearia.';
     area.innerHTML = `
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Escaneie o QR code com o app do seu banco ou copie o código:</p>
-      <div style="background:#fff;border-radius:var(--radius-sm);padding:14px;display:flex;justify-content:center;margin-bottom:12px;">
-        <img src="data:image/png;base64,${dados.qr_code_base64}" alt="QR code Pix" style="width:200px;height:200px;" />
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input type="text" readonly value="${dados.qr_code}" style="font-size:11px;" onclick="this.select()" />
-        <button type="button" class="btn" style="flex-shrink:0;" onclick="copiarCodigoPix(this, '${dados.qr_code}')">Copiar</button>
-      </div>
-      <p id="status-pagamento-carrinho-pix" style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px;">⏳ Aguardando pagamento...</p>
-      <button type="button" class="btn" style="width:100%;" onclick="voltarFormasPagamentoCarrinho('${clienteId}')">← Trocar forma de pagamento</button>
+      <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:14px;">✅ ${mensagem}</p>
+      <button type="button" class="btn btn-primary" style="width:100%;" onclick="fecharModal()">Fechar</button>
     `;
-
-    if (INTERVALO_STATUS_PAGAMENTO) clearInterval(INTERVALO_STATUS_PAGAMENTO);
-    INTERVALO_STATUS_PAGAMENTO = setInterval(() => verificarStatusPagamentoCarrinho(dados.cobranca_id), 4000);
   } catch (e) {
-    alert('Erro ao gerar o pagamento. Tente novamente.');
+    alert('Erro ao registrar. Tente novamente.');
     area.querySelectorAll('button').forEach((b) => { b.disabled = false; });
   }
-}
-
-async function verificarStatusPagamentoCarrinho(cobrancaId) {
-  try {
-    const resp = await fetch(`${MP_API_URL}/api/mp-verificar-pagamento`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cobranca_id: cobrancaId })
-    });
-    const dados = await resp.json();
-    if (dados.status === 'pago') {
-      clearInterval(INTERVALO_STATUS_PAGAMENTO);
-      INTERVALO_STATUS_PAGAMENTO = null;
-      CARRINHO = {};
-      const area = document.getElementById('area-pagamento-carrinho');
-      if (area) {
-        area.innerHTML = `
-          <p style="font-size:13px;color:#7FE0A7;text-align:center;margin-bottom:14px;">✅ <strong>Pagamento confirmado!</strong> Seus produtos já estão separados.</p>
-          <button type="button" class="btn btn-primary" style="width:100%;" onclick="fecharModal()">Fechar</button>
-        `;
-      }
-    }
-  } catch (e) {}
 }
 
 function iniciarTempoRealPublico() {
